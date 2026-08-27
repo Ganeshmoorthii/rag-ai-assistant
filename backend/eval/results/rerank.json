@@ -1,0 +1,4465 @@
+{
+  "config_name": "rerank",
+  "config": {
+    "hybrid": false,
+    "rerank": true,
+    "rewrite": false,
+    "mmr": false
+  },
+  "description": "Dense top-20 candidates, reordered by a cross-encoder",
+  "top_k": 3,
+  "overall": {
+    "n": 25,
+    "hit_rate@1": 0.88,
+    "recall@1": 0.82,
+    "hit_rate@3": 0.96,
+    "recall@3": 0.92,
+    "hit_rate@5": 0.96,
+    "recall@5": 0.92,
+    "mrr": 0.92,
+    "never_found": 1
+  },
+  "by_category": {
+    "exact_term": {
+      "n": 11,
+      "hits": 10,
+      "hit_rate@3": 0.9091
+    },
+    "multi_hop": {
+      "n": 1,
+      "hits": 1,
+      "hit_rate@3": 1.0
+    },
+    "semantic": {
+      "n": 6,
+      "hits": 6,
+      "hit_rate@3": 1.0
+    },
+    "specific_fact": {
+      "n": 4,
+      "hits": 4,
+      "hit_rate@3": 1.0
+    },
+    "vague_phrasing": {
+      "n": 3,
+      "hits": 3,
+      "hit_rate@3": 1.0
+    }
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "question": "What does BILL-RESTOCK mean?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 2
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 6,
+          "score": 1.1901,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_5"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 14,
+          "score": -1.0791,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_13"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 5,
+          "score": -1.1795,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_4"
+        }
+      ],
+      "first_hit_rank": null,
+      "hit@3": false,
+      "reciprocal_rank": 0.0,
+      "trace": {
+        "original_question": "What does BILL-RESTOCK mean?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What does BILL-RESTOCK mean?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.6763,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": 0.672,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.6666,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.6543,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.64,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_13",
+              "b3f816c32b0b46c1bf5520e689f981d8_5",
+              "b3f816c32b0b46c1bf5520e689f981d8_9"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_5",
+              "b3f816c32b0b46c1bf5520e689f981d8_13",
+              "b3f816c32b0b46c1bf5520e689f981d8_4"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_4"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": 1.1901,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": -1.0791,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": -1.1795,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": -1.9708,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -2.6219,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 200.8,
+          "rerank": 17039.9,
+          "total": 17240.7
+        },
+        "search_query": "What does BILL-RESTOCK mean?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_5",
+          "b3f816c32b0b46c1bf5520e689f981d8_13",
+          "b3f816c32b0b46c1bf5520e689f981d8_4"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_13",
+          "b3f816c32b0b46c1bf5520e689f981d8_5",
+          "b3f816c32b0b46c1bf5520e689f981d8_9"
+        ]
+      }
+    },
+    {
+      "id": "q02",
+      "question": "Which order types are counted as revenue?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 5
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 5,
+          "score": -3.4291,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_4"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 14,
+          "score": -6.3001,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_13"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 6,
+          "score": -9.405,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_5"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "Which order types are counted as revenue?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "Which order types are counted as revenue?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.6897,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.647,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.643,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": 0.6255,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": 0.599,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_13"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_13",
+              "b3f816c32b0b46c1bf5520e689f981d8_5"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_5"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": -3.4291,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": -6.3001,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": -9.405,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": -10.4878,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -10.6278,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 92.3,
+          "rerank": 847.4,
+          "total": 939.7
+        },
+        "search_query": "Which order types are counted as revenue?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_13",
+          "b3f816c32b0b46c1bf5520e689f981d8_5"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_13"
+        ]
+      }
+    },
+    {
+      "id": "q03",
+      "question": "What is the sNumber field on an Order?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 8
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 8,
+          "score": 1.3034,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_7"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 10,
+          "score": -4.8076,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_9"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 12,
+          "score": -7.2013,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_11"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What is the sNumber field on an Order?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What is the sNumber field on an Order?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.7004,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.6573,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.6539,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.653,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.6168,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_9",
+              "b3f816c32b0b46c1bf5520e689f981d8_8"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_9",
+              "b3f816c32b0b46c1bf5520e689f981d8_11"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_11"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 1.3034,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": -4.8076,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": -7.2013,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": -7.4118,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -9.1639,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 76.6,
+          "rerank": 851.8,
+          "total": 928.4
+        },
+        "search_query": "What is the sNumber field on an Order?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_9",
+          "b3f816c32b0b46c1bf5520e689f981d8_11"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_9",
+          "b3f816c32b0b46c1bf5520e689f981d8_8"
+        ]
+      }
+    },
+    {
+      "id": "q04",
+      "question": "What does a location ending in -L mean?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 9
+        },
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 3
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 9,
+          "score": 4.2941,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_8"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 13,
+          "score": -6.8601,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_12"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 7,
+          "score": -6.9856,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_6"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What does a location ending in -L mean?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What does a location ending in -L mean?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.5992,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": 0.4698,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.4668,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.4662,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": 0.4648,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_8",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_7"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_8",
+              "b3f816c32b0b46c1bf5520e689f981d8_12",
+              "b3f816c32b0b46c1bf5520e689f981d8_6"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_12",
+              "b3f816c32b0b46c1bf5520e689f981d8_6"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 4.2941,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -6.8601,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -6.9856,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": -7.0263,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -8.5975,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 74.0,
+          "rerank": 741.1,
+          "total": 815.1
+        },
+        "search_query": "What does a location ending in -L mean?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_8",
+          "b3f816c32b0b46c1bf5520e689f981d8_12",
+          "b3f816c32b0b46c1bf5520e689f981d8_6"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_8",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_7"
+        ]
+      }
+    },
+    {
+      "id": "q05",
+      "question": "What is the RestockMax table and what fields does it have?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 10
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 10,
+          "score": 4.1135,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_9"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 9,
+          "score": -0.0099,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_8"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 13,
+          "score": -3.4702,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_12"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What is the RestockMax table and what fields does it have?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What is the RestockMax table and what fields does it have?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.7575,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.6947,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": 0.6791,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.6762,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.6537,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_9",
+              "b3f816c32b0b46c1bf5520e689f981d8_13",
+              "b3f816c32b0b46c1bf5520e689f981d8_3"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_9",
+              "b3f816c32b0b46c1bf5520e689f981d8_8",
+              "b3f816c32b0b46c1bf5520e689f981d8_12"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_8",
+              "b3f816c32b0b46c1bf5520e689f981d8_12"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 4.1135,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": -0.0099,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -3.4702,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -5.7026,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": -6.5747,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 82.2,
+          "rerank": 783.8,
+          "total": 866.0
+        },
+        "search_query": "What is the RestockMax table and what fields does it have?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_9",
+          "b3f816c32b0b46c1bf5520e689f981d8_8",
+          "b3f816c32b0b46c1bf5520e689f981d8_12"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_9",
+          "b3f816c32b0b46c1bf5520e689f981d8_13",
+          "b3f816c32b0b46c1bf5520e689f981d8_3"
+        ]
+      }
+    },
+    {
+      "id": "q06",
+      "question": "How much commission is deducted from the rep when there is a discrepancy?",
+      "category": "specific_fact",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 5
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 5,
+          "score": 3.0451,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_4"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 11,
+          "score": -1.1868,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_10"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 2,
+          "score": -10.2337,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_1"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "How much commission is deducted from the rep when there is a discrepancy?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "How much commission is deducted from the rep when there is a discrepancy?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.7455,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": 0.645,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.5999,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.5928,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.5836,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_10",
+              "b3f816c32b0b46c1bf5520e689f981d8_13"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_10",
+              "b3f816c32b0b46c1bf5520e689f981d8_1"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_1"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 3.0451,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": -1.1868,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_1",
+                "filename": "Advita DOCs.pdf",
+                "page": 2,
+                "score": -10.2337,
+                "preview": "was consumed. The Stickersheet Every implant/device has a stickersheet \u2014 a physical label with lot/serial numbers that g"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": -10.3295,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": -10.4038,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 89.5,
+          "rerank": 827.6,
+          "total": 917.1
+        },
+        "search_query": "How much commission is deducted from the rep when there is a discrepancy?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_10",
+          "b3f816c32b0b46c1bf5520e689f981d8_1"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_10",
+          "b3f816c32b0b46c1bf5520e689f981d8_13"
+        ]
+      }
+    },
+    {
+      "id": "q07",
+      "question": "hey so the thing where the rep gets money taken off, how much is it",
+      "category": "vague_phrasing",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 5
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 2,
+          "score": -5.7672,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_1"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 5,
+          "score": -6.7199,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_4"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 1,
+          "score": -8.4703,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_0"
+        }
+      ],
+      "first_hit_rank": 2,
+      "hit@3": true,
+      "reciprocal_rank": 0.5,
+      "trace": {
+        "original_question": "hey so the thing where the rep gets money taken off, how much is it",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "hey so the thing where the rep gets money taken off, how much is it",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.6146,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": 0.5936,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.571,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.5616,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.5613,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_10",
+              "b3f816c32b0b46c1bf5520e689f981d8_9"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_1",
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_0"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_1",
+              "b3f816c32b0b46c1bf5520e689f981d8_0"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_1",
+                "filename": "Advita DOCs.pdf",
+                "page": 2,
+                "score": -5.7672,
+                "preview": "was consumed. The Stickersheet Every implant/device has a stickersheet \u2014 a physical label with lot/serial numbers that g"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": -6.7199,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_0",
+                "filename": "Advita DOCs.pdf",
+                "page": 1,
+                "score": -8.4703,
+                "preview": "Advita (Cimplicity) \u2014 Full Business Workflow Let me walk you through the entire business as a story, from a surgery bein"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": -8.7779,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": -9.2828,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 82.8,
+          "rerank": 845.0,
+          "total": 927.8
+        },
+        "search_query": "hey so the thing where the rep gets money taken off, how much is it",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_1",
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_0"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_10",
+          "b3f816c32b0b46c1bf5520e689f981d8_9"
+        ]
+      }
+    },
+    {
+      "id": "q08",
+      "question": "what happens with the sticker thing after surgery",
+      "category": "vague_phrasing",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 2
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 2,
+          "score": -0.838,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_1"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 6,
+          "score": -1.4828,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_5"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 13,
+          "score": -4.1953,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_12"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "what happens with the sticker thing after surgery",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "what happens with the sticker thing after surgery",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_1",
+                "filename": "Advita DOCs.pdf",
+                "page": 2,
+                "score": 0.7604,
+                "preview": "was consumed. The Stickersheet Every implant/device has a stickersheet \u2014 a physical label with lot/serial numbers that g"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": 0.6838,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.5938,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.5886,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.5763,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_1",
+              "b3f816c32b0b46c1bf5520e689f981d8_5",
+              "b3f816c32b0b46c1bf5520e689f981d8_7"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_1",
+              "b3f816c32b0b46c1bf5520e689f981d8_5",
+              "b3f816c32b0b46c1bf5520e689f981d8_12"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_12"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_1",
+                "filename": "Advita DOCs.pdf",
+                "page": 2,
+                "score": -0.838,
+                "preview": "was consumed. The Stickersheet Every implant/device has a stickersheet \u2014 a physical label with lot/serial numbers that g"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": -1.4828,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -4.1953,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_0",
+                "filename": "Advita DOCs.pdf",
+                "page": 1,
+                "score": -9.3573,
+                "preview": "Advita (Cimplicity) \u2014 Full Business Workflow Let me walk you through the entire business as a story, from a surgery bein"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -9.3961,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 77.2,
+          "rerank": 860.2,
+          "total": 937.4
+        },
+        "search_query": "what happens with the sticker thing after surgery",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_1",
+          "b3f816c32b0b46c1bf5520e689f981d8_5",
+          "b3f816c32b0b46c1bf5520e689f981d8_12"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_1",
+          "b3f816c32b0b46c1bf5520e689f981d8_5",
+          "b3f816c32b0b46c1bf5520e689f981d8_7"
+        ]
+      }
+    },
+    {
+      "id": "q09",
+      "question": "Which endpoint powers the Backorders section of the Action Center?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 13
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 13,
+          "score": 4.6157,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_12"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 3,
+          "score": -3.2352,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_2"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 14,
+          "score": -7.852,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_13"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "Which endpoint powers the Backorders section of the Action Center?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "Which endpoint powers the Backorders section of the Action Center?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": 0.7848,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.7016,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.7001,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.6658,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": 0.6398,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_12",
+              "b3f816c32b0b46c1bf5520e689f981d8_13",
+              "b3f816c32b0b46c1bf5520e689f981d8_2"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_12",
+              "b3f816c32b0b46c1bf5520e689f981d8_2",
+              "b3f816c32b0b46c1bf5520e689f981d8_13"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": 4.6157,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -3.2352,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": -7.852,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": -8.6542,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": -9.7801,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 86.9,
+          "rerank": 862.3,
+          "total": 949.2
+        },
+        "search_query": "Which endpoint powers the Backorders section of the Action Center?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_12",
+          "b3f816c32b0b46c1bf5520e689f981d8_2",
+          "b3f816c32b0b46c1bf5520e689f981d8_13"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_12",
+          "b3f816c32b0b46c1bf5520e689f981d8_13",
+          "b3f816c32b0b46c1bf5520e689f981d8_2"
+        ]
+      }
+    },
+    {
+      "id": "q10",
+      "question": "How does a loaner shipping item get approved?",
+      "category": "semantic",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 9
+        },
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 3
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 9,
+          "score": 1.089,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_8"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 6,
+          "score": -0.1472,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_5"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 13,
+          "score": -3.6176,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_12"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "How does a loaner shipping item get approved?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "How does a loaner shipping item get approved?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.7127,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.6324,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.6174,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.6105,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.6072,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_8",
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_13"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_8",
+              "b3f816c32b0b46c1bf5520e689f981d8_5",
+              "b3f816c32b0b46c1bf5520e689f981d8_12"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_5",
+              "b3f816c32b0b46c1bf5520e689f981d8_12"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 1.089,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": -0.1472,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -3.6176,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -4.8175,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": -5.3446,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 72.0,
+          "rerank": 834.4,
+          "total": 906.4
+        },
+        "search_query": "How does a loaner shipping item get approved?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_8",
+          "b3f816c32b0b46c1bf5520e689f981d8_5",
+          "b3f816c32b0b46c1bf5520e689f981d8_12"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_8",
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_13"
+        ]
+      }
+    },
+    {
+      "id": "q11",
+      "question": "What is the difference between a BillingItem and a ShippingItem?",
+      "category": "semantic",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 8
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 8,
+          "score": 2.2955,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_7"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 7,
+          "score": -2.1538,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_6"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 9,
+          "score": -3.0496,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_8"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What is the difference between a BillingItem and a ShippingItem?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What is the difference between a BillingItem and a ShippingItem?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.7597,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": 0.6656,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.6468,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": 0.6266,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.6264,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_6",
+              "b3f816c32b0b46c1bf5520e689f981d8_8"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_6",
+              "b3f816c32b0b46c1bf5520e689f981d8_8"
+            ],
+            "changed_top_k": false,
+            "promoted_into_top_k": [],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 2.2955,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -2.1538,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": -3.0496,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": -7.1636,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -8.5556,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 85.8,
+          "rerank": 834.4,
+          "total": 920.2
+        },
+        "search_query": "What is the difference between a BillingItem and a ShippingItem?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_6",
+          "b3f816c32b0b46c1bf5520e689f981d8_8"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_6",
+          "b3f816c32b0b46c1bf5520e689f981d8_8"
+        ]
+      }
+    },
+    {
+      "id": "q12",
+      "question": "What prefix identifies a Cimplicity API key?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 2
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 1,
+          "score": 1.8655,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 2,
+          "score": 1.6479,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 3,
+          "score": -3.3856,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+        }
+      ],
+      "first_hit_rank": 2,
+      "hit@3": true,
+      "reciprocal_rank": 0.5,
+      "trace": {
+        "original_question": "What prefix identifies a Cimplicity API key?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What prefix identifies a Cimplicity API key?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": 0.7053,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 0.6881,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.6413,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+                "filename": "Cim Authentication.pdf",
+                "page": 11,
+                "score": 0.6006,
+                "preview": "./src/middleware/authentication.ts ./src/middleware/jwtCache.ts ./src/config/index.ts ./src/endpoints.ts ./src/modules/u"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.5851,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": 1.8655,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 1.6479,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+                "filename": "Cim Authentication.pdf",
+                "page": 3,
+                "score": -3.3856,
+                "preview": "3.2 Storing Tokens * Mobile: Store tokens in the OS keychain (iOS Keychain / Android Keystore). * Web: Store in sessionS"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": -3.5704,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_0",
+                "filename": "Advita DOCs.pdf",
+                "page": 1,
+                "score": -4.7587,
+                "preview": "Advita (Cimplicity) \u2014 Full Business Workflow Let me walk you through the entire business as a story, from a surgery bein"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 77.9,
+          "rerank": 848.3,
+          "total": 926.2
+        },
+        "search_query": "What prefix identifies a Cimplicity API key?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+        ]
+      }
+    },
+    {
+      "id": "q13",
+      "question": "What does requireApikey do?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 4
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 4,
+          "score": 1.008,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 10,
+          "score": -1.9142,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 7,
+          "score": -2.161,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What does requireApikey do?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What does requireApikey do?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.6164,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.5959,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+                "filename": "Cim Authentication.pdf",
+                "page": 11,
+                "score": 0.5794,
+                "preview": "./src/middleware/authentication.ts ./src/middleware/jwtCache.ts ./src/config/index.ts ./src/endpoints.ts ./src/modules/u"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.5347,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": 0.5313,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_10"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 1.008,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": -1.9142,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": -2.161,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": -5.78,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_0",
+                "filename": "Advita DOCs.pdf",
+                "page": 1,
+                "score": -9.6285,
+                "preview": "Advita (Cimplicity) \u2014 Full Business Workflow Let me walk you through the entire business as a story, from a surgery bein"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 91.6,
+          "rerank": 876.3,
+          "total": 967.9
+        },
+        "search_query": "What does requireApikey do?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_10"
+        ]
+      }
+    },
+    {
+      "id": "q14",
+      "question": "Where is the JWT payload cached and what is the TTL?",
+      "category": "specific_fact",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 6
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 6,
+          "score": 2.6367,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 11,
+          "score": -2.5688,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_10"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 1,
+          "score": -3.1775,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "Where is the JWT payload cached and what is the TTL?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "Where is the JWT payload cached and what is the TTL?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": 0.7434,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+                "filename": "Cim Authentication.pdf",
+                "page": 5,
+                "score": 0.6751,
+                "preview": "401 Unauthorized 4.3 JWT Verification verifyToken in ./src/middleware/authentication.ts performs:"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+                "filename": "Cim Authentication.pdf",
+                "page": 11,
+                "score": 0.6344,
+                "preview": "./src/middleware/authentication.ts ./src/middleware/jwtCache.ts ./src/config/index.ts ./src/endpoints.ts ./src/modules/u"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.6192,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+                "filename": "Cim Authentication.pdf",
+                "page": 3,
+                "score": 0.5838,
+                "preview": "3.2 Storing Tokens * Mobile: Store tokens in the OS keychain (iOS Keychain / Android Keystore). * Web: Store in sessionS"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_10"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": 2.6367,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+                "filename": "Cim Authentication.pdf",
+                "page": 11,
+                "score": -2.5688,
+                "preview": "./src/middleware/authentication.ts ./src/middleware/jwtCache.ts ./src/config/index.ts ./src/endpoints.ts ./src/modules/u"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": -3.1775,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+                "filename": "Cim Authentication.pdf",
+                "page": 5,
+                "score": -4.1458,
+                "preview": "401 Unauthorized 4.3 JWT Verification verifyToken in ./src/middleware/authentication.ts performs:"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": -4.5148,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 81.8,
+          "rerank": 797.5,
+          "total": 879.3
+        },
+        "search_query": "Where is the JWT payload cached and what is the TTL?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_10"
+        ]
+      }
+    },
+    {
+      "id": "q15",
+      "question": "What happens if disableSecurityCheck is true?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 6
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 6,
+          "score": -0.3422,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 7,
+          "score": -9.225,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 10,
+          "score": -9.6924,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What happens if disableSecurityCheck is true?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What happens if disableSecurityCheck is true?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+                "filename": "Cim Authentication.pdf",
+                "page": 5,
+                "score": 0.5506,
+                "preview": "401 Unauthorized 4.3 JWT Verification verifyToken in ./src/middleware/authentication.ts performs:"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.5396,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.5351,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": 0.53,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.5226,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_5"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": -0.3422,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": -9.225,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": -9.6924,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": -9.8413,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": -10.86,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 75.7,
+          "rerank": 833.5,
+          "total": 909.2
+        },
+        "search_query": "What happens if disableSecurityCheck is true?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        ]
+      }
+    },
+    {
+      "id": "q16",
+      "question": "Do API keys respect the permission system?",
+      "category": "semantic",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 7
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 7,
+          "score": 3.4932,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 2,
+          "score": 0.1753,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 1,
+          "score": -0.7659,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "Do API keys respect the permission system?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "Do API keys respect the permission system?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.7754,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": 0.6541,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": 0.6426,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.6426,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 0.639,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_8"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 3.4932,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 0.1753,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": -0.7659,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": -0.8833,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": -2.918,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 79.7,
+          "rerank": 797.1,
+          "total": 876.8
+        },
+        "search_query": "Do API keys respect the permission system?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_8"
+        ]
+      }
+    },
+    {
+      "id": "q17",
+      "question": "When does the API return 403 versus 401?",
+      "category": "specific_fact",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 9
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 9,
+          "score": 0.2297,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 5,
+          "score": -6.8117,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 4,
+          "score": -7.1054,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "When does the API return 403 versus 401?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "When does the API return 403 versus 401?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.6688,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": 0.6499,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.6475,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.6441,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+                "filename": "Cim Authentication.pdf",
+                "page": 5,
+                "score": 0.6408,
+                "preview": "401 Unauthorized 4.3 JWT Verification verifyToken in ./src/middleware/authentication.ts performs:"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_4"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": 0.2297,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+                "filename": "Cim Authentication.pdf",
+                "page": 5,
+                "score": -6.8117,
+                "preview": "401 Unauthorized 4.3 JWT Verification verifyToken in ./src/middleware/authentication.ts performs:"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": -7.1054,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": -9.1618,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": -10.3637,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 79.8,
+          "rerank": 790.0,
+          "total": 869.8
+        },
+        "search_query": "When does the API return 403 versus 401?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+        ]
+      }
+    },
+    {
+      "id": "q18",
+      "question": "How does user impersonation work and what permission does it need?",
+      "category": "semantic",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 3
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 3,
+          "score": 0.589,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 8,
+          "score": 0.5512,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 10,
+          "score": 0.3461,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "How does user impersonation work and what permission does it need?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "How does user impersonation work and what permission does it need?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.6863,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.648,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": 0.632,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+                "filename": "Cim Authentication.pdf",
+                "page": 3,
+                "score": 0.6158,
+                "preview": "3.2 Storing Tokens * Mobile: Store tokens in the OS keychain (iOS Keychain / Android Keystore). * Web: Store in sessionS"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.5652,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_7"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+                "filename": "Cim Authentication.pdf",
+                "page": 3,
+                "score": 0.589,
+                "preview": "3.2 Storing Tokens * Mobile: Store tokens in the OS keychain (iOS Keychain / Android Keystore). * Web: Store in sessionS"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": 0.5512,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.3461,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": -2.1698,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": -2.7677,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 75.8,
+          "rerank": 820.4,
+          "total": 896.2
+        },
+        "search_query": "How does user impersonation work and what permission does it need?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_7"
+        ]
+      }
+    },
+    {
+      "id": "q19",
+      "question": "Where should refresh tokens be stored on web?",
+      "category": "semantic",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 3
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 3,
+          "score": 5.7702,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 10,
+          "score": 1.5299,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 9,
+          "score": 0.356,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "Where should refresh tokens be stored on web?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "Where should refresh tokens be stored on web?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+                "filename": "Cim Authentication.pdf",
+                "page": 3,
+                "score": 0.7166,
+                "preview": "3.2 Storing Tokens * Mobile: Store tokens in the OS keychain (iOS Keychain / Android Keystore). * Web: Store in sessionS"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": 0.6813,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 0.6463,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": 0.6409,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_4",
+                "filename": "Cim Authentication.pdf",
+                "page": 5,
+                "score": 0.602,
+                "preview": "401 Unauthorized 4.3 JWT Verification verifyToken in ./src/middleware/authentication.ts performs:"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_8"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+                "filename": "Cim Authentication.pdf",
+                "page": 3,
+                "score": 5.7702,
+                "preview": "3.2 Storing Tokens * Mobile: Store tokens in the OS keychain (iOS Keychain / Android Keystore). * Web: Store in sessionS"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 1.5299,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": 0.356,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": -2.6579,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": -7.625,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 78.0,
+          "rerank": 840.8,
+          "total": 918.8
+        },
+        "search_query": "Where should refresh tokens be stored on web?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_8"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_2",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_1"
+        ]
+      }
+    },
+    {
+      "id": "q20",
+      "question": "What does the wildcard * mean in a permission string?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 8
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 8,
+          "score": 4.8514,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 7,
+          "score": -7.5405,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 10,
+          "score": -8.6184,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What does the wildcard * mean in a permission string?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What does the wildcard * mean in a permission string?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": 0.6986,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": 0.5852,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": 0.5753,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.5465,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.5456,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "b3f816c32b0b46c1bf5520e689f981d8_8"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+                "filename": "Cim Authentication.pdf",
+                "page": 8,
+                "score": 4.8514,
+                "preview": "5.2 Permission Evaluation user.hasPermission(input) in ./src/database/models/user.ts:7@ builds an in-memory tree from th"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+                "filename": "Cim Authentication.pdf",
+                "page": 7,
+                "score": -7.5405,
+                "preview": "validateApikey ( ./src/modules/apikeys/controller.ts:15@ ) hashes the incoming key, looks it up by keyHash with isActive"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": -8.6184,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": -9.225,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_8",
+                "filename": "Advita DOCs.pdf",
+                "page": 9,
+                "score": -9.6431,
+                "preview": "|\u2014 transferItemId = belongs to a TransferItem L\u2014 auditItemId > belongs to an AuditItem Key fields to understand: * locat"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 82.0,
+          "rerank": 850.1,
+          "total": 932.1
+        },
+        "search_query": "What does the wildcard * mean in a permission string?",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_7",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_6",
+          "b3f816c32b0b46c1bf5520e689f981d8_8"
+        ]
+      }
+    },
+    {
+      "id": "q21",
+      "question": "which scopes does the frontend ask azure for",
+      "category": "semantic",
+      "expected": [
+        {
+          "filename": "Cim Authentication.pdf",
+          "page": 2
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Cim Authentication.pdf",
+          "page": 2,
+          "score": 2.9298,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1"
+        },
+        {
+          "rank": 2,
+          "filename": "Cim Authentication.pdf",
+          "page": 10,
+          "score": 1.4429,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9"
+        },
+        {
+          "rank": 3,
+          "filename": "Cim Authentication.pdf",
+          "page": 1,
+          "score": 0.3428,
+          "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "which scopes does the frontend ask azure for",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "which scopes does the frontend ask azure for",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 0.6697,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 0.6577,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_3",
+                "filename": "Cim Authentication.pdf",
+                "page": 4,
+                "score": 0.6284,
+                "preview": "can render permission-gated UI. 4. Backend Flow 4.1 Entry Point All protected Express routes are wrapped with the requir"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_10",
+                "filename": "Cim Authentication.pdf",
+                "page": 11,
+                "score": 0.6251,
+                "preview": "./src/middleware/authentication.ts ./src/middleware/jwtCache.ts ./src/config/index.ts ./src/endpoints.ts ./src/modules/u"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": 0.61,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+            ],
+            "top_k_after": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+                "filename": "Cim Authentication.pdf",
+                "page": 2,
+                "score": 2.9298,
+                "preview": "API keys are recognised by the cim_ prefix and are validated against the apikey table (SHA-256 hash match + isActive + e"
+              },
+              {
+                "rank": 2,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+                "filename": "Cim Authentication.pdf",
+                "page": 10,
+                "score": 1.4429,
+                "preview": "endpoints) 404 Not Impersonation target email ; . ./src/middleware/authentication.ts:160 Found does not exist 8. Fronten"
+              },
+              {
+                "rank": 3,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_0",
+                "filename": "Cim Authentication.pdf",
+                "page": 1,
+                "score": 0.3428,
+                "preview": "Authentication & Authorization Flow This document describes the end-to-end authentication and authorization flow for the"
+              },
+              {
+                "rank": 4,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_8",
+                "filename": "Cim Authentication.pdf",
+                "page": 9,
+                "score": -1.3017,
+                "preview": "Store tokens in keygbain / sessionStorage Frontend Azure AD POST /token (ROPC: username + password) access_token + refre"
+              },
+              {
+                "rank": 5,
+                "id": "def7d74f135e4c439c1ac7e5ed80d3ef_5",
+                "filename": "Cim Authentication.pdf",
+                "page": 6,
+                "score": -8.9798,
+                "preview": "1. Cache lookup \u2014 getCachedJwtPayload(token) in ./src/middleware/jwtCache.ts \u2014 Redis- backed, SHA-256-hashed key, TTL al"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 76.7,
+          "rerank": 829.8,
+          "total": 906.5
+        },
+        "search_query": "which scopes does the frontend ask azure for",
+        "final_chunk_ids": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_0"
+        ],
+        "retrieval_order_before_rerank": [
+          "def7d74f135e4c439c1ac7e5ed80d3ef_1",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_9",
+          "def7d74f135e4c439c1ac7e5ed80d3ef_3"
+        ]
+      }
+    },
+    {
+      "id": "q22",
+      "question": "What is the pricing priority order for receipts?",
+      "category": "specific_fact",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 3
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 3,
+          "score": 1.9306,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_2"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 8,
+          "score": -8.6205,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_7"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 7,
+          "score": -8.7087,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_6"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What is the pricing priority order for receipts?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What is the pricing priority order for receipts?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.6633,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.6536,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.6479,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.6392,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.6329,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_2",
+              "b3f816c32b0b46c1bf5520e689f981d8_4"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_2",
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_6"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_6"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 1.9306,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": -8.6205,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -8.7087,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": -9.6656,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": -9.7191,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 83.6,
+          "rerank": 801.3,
+          "total": 884.9
+        },
+        "search_query": "What is the pricing priority order for receipts?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_2",
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_6"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_2",
+          "b3f816c32b0b46c1bf5520e689f981d8_4"
+        ]
+      }
+    },
+    {
+      "id": "q23",
+      "question": "Why are all the restock orders showing verificationStatus SKIPPED?",
+      "category": "exact_term",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 12
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 12,
+          "score": 4.4626,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_11"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 8,
+          "score": 0.4009,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_7"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 6,
+          "score": -2.1616,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_5"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "Why are all the restock orders showing verificationStatus SKIPPED?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "Why are all the restock orders showing verificationStatus SKIPPED?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 0.7717,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.6884,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": 0.6342,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": 0.6322,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.6313,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_11",
+              "b3f816c32b0b46c1bf5520e689f981d8_13",
+              "b3f816c32b0b46c1bf5520e689f981d8_3"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_11",
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_5"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_7",
+              "b3f816c32b0b46c1bf5520e689f981d8_5"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_11",
+                "filename": "Advita DOCs.pdf",
+                "page": 12,
+                "score": 4.4626,
+                "preview": "8. Missing items \u2014 auto-create a Transfer to cover 10. Verification \u2014 Al Stickersheet Check Order submitted J POST /orde"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_7",
+                "filename": "Advita DOCs.pdf",
+                "page": 8,
+                "score": 0.4009,
+                "preview": "Key fields on Order : * status \u2014 current lifecycle state * inQad \u2014 has it been written to QAD yet? * inCsFax \u2014 has it be"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": -2.1616,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -3.0994,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_12",
+                "filename": "Advita DOCs.pdf",
+                "page": 13,
+                "score": -4.3613,
+                "preview": "12. The Action Center \u2014 What Endpoints Power It Action Center ; Endpoint What it queries Section Restocks GET /actionCen"
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 80.6,
+          "rerank": 807.8,
+          "total": 888.4
+        },
+        "search_query": "Why are all the restock orders showing verificationStatus SKIPPED?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_11",
+          "b3f816c32b0b46c1bf5520e689f981d8_7",
+          "b3f816c32b0b46c1bf5520e689f981d8_5"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_11",
+          "b3f816c32b0b46c1bf5520e689f981d8_13",
+          "b3f816c32b0b46c1bf5520e689f981d8_3"
+        ]
+      }
+    },
+    {
+      "id": "q24",
+      "question": "how do big inventory moves avoid slowing everything down",
+      "category": "vague_phrasing",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 4
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 4,
+          "score": -0.2909,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_3"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 11,
+          "score": -7.0356,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_10"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 10,
+          "score": -10.736,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_9"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "how do big inventory moves avoid slowing everything down",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "how do big inventory moves avoid slowing everything down",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": 0.7014,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": 0.6721,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.6275,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_13",
+                "filename": "Advita DOCs.pdf",
+                "page": 14,
+                "score": 0.6181,
+                "preview": "> POST /ebi/updateOrder - Written to QAD (inQad = true) > inCsFax = true - Sent to warehouse 7. Warehouse ships replacem"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": 0.6081,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_3",
+              "b3f816c32b0b46c1bf5520e689f981d8_10",
+              "b3f816c32b0b46c1bf5520e689f981d8_2"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_3",
+              "b3f816c32b0b46c1bf5520e689f981d8_10",
+              "b3f816c32b0b46c1bf5520e689f981d8_9"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_9"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": -0.2909,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_10",
+                "filename": "Advita DOCs.pdf",
+                "page": 11,
+                "score": -7.0356,
+                "preview": "8. The Transfer System \u2014 Moving Inventory Between Reps When inventory needs to move from one agency to another: Transfer"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_9",
+                "filename": "Advita DOCs.pdf",
+                "page": 10,
+                "score": -10.736,
+                "preview": "EUV yer rrr POSE I ME Pe ee ty HIS OYE PN ne i MH tee rewnes numbers 6. The RestockMax Table \u2014 Demand Planning Engine Re"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_0",
+                "filename": "Advita DOCs.pdf",
+                "page": 1,
+                "score": -11.0087,
+                "preview": "Advita (Cimplicity) \u2014 Full Business Workflow Let me walk you through the entire business as a story, from a surgery bein"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -11.0625,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 75.7,
+          "rerank": 808.1,
+          "total": 883.8
+        },
+        "search_query": "how do big inventory moves avoid slowing everything down",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_3",
+          "b3f816c32b0b46c1bf5520e689f981d8_10",
+          "b3f816c32b0b46c1bf5520e689f981d8_9"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_3",
+          "b3f816c32b0b46c1bf5520e689f981d8_10",
+          "b3f816c32b0b46c1bf5520e689f981d8_2"
+        ]
+      }
+    },
+    {
+      "id": "q25",
+      "question": "What are the two ERP systems and which module talks to each?",
+      "category": "multi_hop",
+      "expected": [
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 4
+        },
+        {
+          "filename": "Advita DOCs.pdf",
+          "page": 3
+        }
+      ],
+      "chunks": [
+        {
+          "rank": 1,
+          "filename": "Advita DOCs.pdf",
+          "page": 4,
+          "score": 3.508,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_3"
+        },
+        {
+          "rank": 2,
+          "filename": "Advita DOCs.pdf",
+          "page": 3,
+          "score": -7.5098,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_2"
+        },
+        {
+          "rank": 3,
+          "filename": "Advita DOCs.pdf",
+          "page": 6,
+          "score": -8.1438,
+          "id": "b3f816c32b0b46c1bf5520e689f981d8_5"
+        }
+      ],
+      "first_hit_rank": 1,
+      "hit@3": true,
+      "reciprocal_rank": 1.0,
+      "trace": {
+        "original_question": "What are the two ERP systems and which module talks to each?",
+        "config": {
+          "top_k": 3,
+          "hybrid": false,
+          "rerank": true,
+          "rewrite": false,
+          "hyde": false,
+          "mmr": false,
+          "candidate_k": 20,
+          "rrf_k": 60
+        },
+        "stages": [
+          {
+            "stage": "dense_search",
+            "query": "What are the two ERP systems and which module talks to each?",
+            "returned": 20,
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": 0.6043,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": 0.5926,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": 0.5693,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": 0.559,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": 0.5571,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              }
+            ]
+          },
+          {
+            "stage": "rerank",
+            "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "candidates_scored": 20,
+            "top_k_before": [
+              "b3f816c32b0b46c1bf5520e689f981d8_3",
+              "b3f816c32b0b46c1bf5520e689f981d8_4",
+              "b3f816c32b0b46c1bf5520e689f981d8_2"
+            ],
+            "top_k_after": [
+              "b3f816c32b0b46c1bf5520e689f981d8_3",
+              "b3f816c32b0b46c1bf5520e689f981d8_2",
+              "b3f816c32b0b46c1bf5520e689f981d8_5"
+            ],
+            "changed_top_k": true,
+            "promoted_into_top_k": [
+              "b3f816c32b0b46c1bf5520e689f981d8_5"
+            ],
+            "top": [
+              {
+                "rank": 1,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_3",
+                "filename": "Advita DOCs.pdf",
+                "page": 4,
+                "score": 3.508,
+                "preview": "* When stock drops below that level, restocking is triggered * Max levels can be uploaded via Excel or synced from Share"
+              },
+              {
+                "rank": 2,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_2",
+                "filename": "Advita DOCs.pdf",
+                "page": 3,
+                "score": -7.5098,
+                "preview": "Straight sale, skips surge Hospital buying product directly DIRECT-SALE z a workflow \u2014 Module: Orders * Central hub for "
+              },
+              {
+                "rank": 3,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_5",
+                "filename": "Advita DOCs.pdf",
+                "page": 6,
+                "score": -8.1438,
+                "preview": "Restocks Pending restock shipments Stickersheet Inbox Uploaded stickersheets waiting to be processed Everything can be e"
+              },
+              {
+                "rank": 4,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_4",
+                "filename": "Advita DOCs.pdf",
+                "page": 5,
+                "score": -8.6293,
+                "preview": "\u00b0 If discrepancy is too large \u2014 commission is deducted from the rep ( Item Cost x 1.4) Act 7 \u2014 Reporting & Analytics Man"
+              },
+              {
+                "rank": 5,
+                "id": "b3f816c32b0b46c1bf5520e689f981d8_6",
+                "filename": "Advita DOCs.pdf",
+                "page": 7,
+                "score": -9.2011,
+                "preview": "DUDSITICSS FIOVv 1. The Core Spine \u2014 How Everything Connects The entire system revolves around one central model: Order "
+              }
+            ]
+          }
+        ],
+        "timings_ms": {
+          "dense_search": 79.9,
+          "rerank": 805.9,
+          "total": 885.8
+        },
+        "search_query": "What are the two ERP systems and which module talks to each?",
+        "final_chunk_ids": [
+          "b3f816c32b0b46c1bf5520e689f981d8_3",
+          "b3f816c32b0b46c1bf5520e689f981d8_2",
+          "b3f816c32b0b46c1bf5520e689f981d8_5"
+        ],
+        "retrieval_order_before_rerank": [
+          "b3f816c32b0b46c1bf5520e689f981d8_3",
+          "b3f816c32b0b46c1bf5520e689f981d8_4",
+          "b3f816c32b0b46c1bf5520e689f981d8_2"
+        ]
+      }
+    }
+  ]
+}

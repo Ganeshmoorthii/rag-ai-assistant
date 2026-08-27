@@ -1,0 +1,231 @@
+{
+  "_readme": [
+    "GOLDEN SET — the ground truth your hit-rate is measured against.",
+    "",
+    "Each entry says: for this question, WHICH page(s) actually contain the",
+    "answer. Retrieval is 'correct' if a chunk from one of those pages shows",
+    "up in the top k.",
+    "",
+    "Answers are keyed on filename + page, NOT chunk id, because chunk ids",
+    "(doc_id_N) are regenerated every time you re-upload a PDF. Filename +",
+    "page survives re-ingestion.",
+    "",
+    "'failure_kind' is YOUR label, filled in after you inspect the trace:",
+    "  retrieval  = the right page never made the top k -> fix retrieval",
+    "  generation = right page WAS retrieved, answer still wrong -> fix the",
+    "               prompt, the chunk size, or the model",
+    "  ok         = works fine, kept as a regression guard",
+    "  unlabeled  = not yet triaged",
+    "",
+    "'category' groups questions by WHY they are hard. This is what lets you",
+    "say 'hybrid fixed the exact_term questions and did nothing for the",
+    "vague_phrasing ones' — which is the 'what did your change NOT fix?'",
+    "question your mentor will ask."
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "question": "What does BILL-RESTOCK mean?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 2 }],
+      "category": "exact_term",
+      "note": "Dense search confuses BILL-RESTOCK / BILL-ONLY / RESTOCK-ONLY because they embed almost identically. BM25 should nail it on the literal token.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q02",
+      "question": "Which order types are counted as revenue?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 5 }],
+      "category": "exact_term",
+      "note": "Answer is 'only BILL-ONLY and BILL-RESTOCK; RESTOCK-ONLY excluded'. Needs the exact order-type tokens.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q03",
+      "question": "What is the sNumber field on an Order?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 8 }],
+      "category": "exact_term",
+      "note": "camelCase field name. Tokenisation matters here.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q04",
+      "question": "What does a location ending in -L mean?",
+      "expected": [
+        { "filename": "Advita DOCs.pdf", "page": 9 },
+        { "filename": "Advita DOCs.pdf", "page": 3 }
+      ],
+      "category": "exact_term",
+      "note": "'-L' is nearly invisible to an embedding model — two characters carrying the whole meaning (loaner stock).",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q05",
+      "question": "What is the RestockMax table and what fields does it have?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 10 }],
+      "category": "exact_term",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q06",
+      "question": "How much commission is deducted from the rep when there is a discrepancy?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 5 }],
+      "category": "specific_fact",
+      "note": "Answer is 'Item Cost x 1.4'. Tests whether the right page is retrieved AND the number survives into the answer.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q07",
+      "question": "hey so the thing where the rep gets money taken off, how much is it",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 5 }],
+      "category": "vague_phrasing",
+      "note": "Same fact as q06 but phrased the way a real user types. This is the question query rewriting exists for — hybrid search will NOT fix it, because there is no exact term to match.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q08",
+      "question": "what happens with the sticker thing after surgery",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 2 }],
+      "category": "vague_phrasing",
+      "note": "'sticker thing' vs 'stickersheet'. Vocabulary mismatch.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q09",
+      "question": "Which endpoint powers the Backorders section of the Action Center?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 13 }],
+      "category": "exact_term",
+      "note": "Answer: GET /ebi/backorders. Endpoint paths are pure lexical matches.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q10",
+      "question": "How does a loaner shipping item get approved?",
+      "expected": [
+        { "filename": "Advita DOCs.pdf", "page": 9 },
+        { "filename": "Advita DOCs.pdf", "page": 3 }
+      ],
+      "category": "semantic",
+      "note": "Genuinely semantic — dense search should already handle this. Regression guard: your change must not break it.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q11",
+      "question": "What is the difference between a BillingItem and a ShippingItem?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 8 }],
+      "category": "semantic",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q12",
+      "question": "What prefix identifies a Cimplicity API key?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 2 }],
+      "category": "exact_term",
+      "note": "Answer: the cim_ prefix. A short literal token — classic BM25 win.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q13",
+      "question": "What does requireApikey do?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 4 }],
+      "category": "exact_term",
+      "note": "Identifier lookup. Page 4 is a very short chunk (430 chars), which makes it hard for dense search to surface — another reason BM25's length normalisation helps.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q14",
+      "question": "Where is the JWT payload cached and what is the TTL?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 6 }],
+      "category": "specific_fact",
+      "note": "Answer: Redis-backed, TTL aligned to JWT exp, capped at 60 min.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q15",
+      "question": "What happens if disableSecurityCheck is true?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 6 }],
+      "category": "exact_term",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q16",
+      "question": "Do API keys respect the permission system?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 7 }],
+      "category": "semantic",
+      "note": "Answer: no — they bypass it and act as superuser. The doc phrases this as a warning, not as an answer to this question.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q17",
+      "question": "When does the API return 403 versus 401?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 9 }],
+      "category": "specific_fact",
+      "note": "Status codes are numeric tokens — dense embeddings handle numbers poorly.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q18",
+      "question": "How does user impersonation work and what permission does it need?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 3 }],
+      "category": "semantic",
+      "note": "Answer: impersonate header + user.impersonate permission.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q19",
+      "question": "Where should refresh tokens be stored on web?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 3 }],
+      "category": "semantic",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q20",
+      "question": "What does the wildcard * mean in a permission string?",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 8 }],
+      "category": "exact_term",
+      "note": "A single-character query term. Tokenisers routinely drop '*' entirely — worth checking in the trace's query_terms.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q21",
+      "question": "which scopes does the frontend ask azure for",
+      "expected": [{ "filename": "Cim Authentication.pdf", "page": 2 }],
+      "category": "semantic",
+      "note": "Answer: openid, profile, email, offline_access.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q22",
+      "question": "What is the pricing priority order for receipts?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 3 }],
+      "category": "specific_fact",
+      "note": "Answer: No Charge + Cap > Custom > Discount + Base Price. Order matters, so this is a good generation-failure probe — the right chunk can be retrieved and the ordering still garbled.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q23",
+      "question": "Why are all the restock orders showing verificationStatus SKIPPED?",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 12 }],
+      "category": "exact_term",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q24",
+      "question": "how do big inventory moves avoid slowing everything down",
+      "expected": [{ "filename": "Advita DOCs.pdf", "page": 4 }],
+      "category": "vague_phrasing",
+      "note": "Answer: transfers of 100+ items are scheduled off-peak.",
+      "failure_kind": "unlabeled"
+    },
+    {
+      "id": "q25",
+      "question": "What are the two ERP systems and which module talks to each?",
+      "expected": [
+        { "filename": "Advita DOCs.pdf", "page": 4 },
+        { "filename": "Advita DOCs.pdf", "page": 3 }
+      ],
+      "category": "multi_hop",
+      "note": "Needs SAP (via EBI) and QAD from more than one page. A single top-1 chunk cannot answer it — this is where MMR's diversity should pay off.",
+      "failure_kind": "unlabeled"
+    }
+  ]
+}

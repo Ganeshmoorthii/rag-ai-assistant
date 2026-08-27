@@ -1,0 +1,12 @@
+{"id":"q01","question":"What does BILL-RESTOCK mean?","category":"exact_term","expected_chunk_id":"b3f816c32b0b46c1bf5520e689f981d8_1","expected":[{"filename":"Advita DOCs.pdf","page":2}]}
+{"id":"q02","question":"Which order types are counted as revenue?","category":"exact_term","expected_chunk_id":"b3f816c32b0b46c1bf5520e689f981d8_4","expected":[{"filename":"Advita DOCs.pdf","page":5}]}
+{"id":"q03","question":"What is the sNumber field on an Order?","category":"exact_term","expected_chunk_id":"b3f816c32b0b46c1bf5520e689f981d8_7","expected":[{"filename":"Advita DOCs.pdf","page":8}]}
+{"id":"q06","question":"How much commission is deducted from the rep when there is a discrepancy?","category":"specific_fact","expected_chunk_id":"b3f816c32b0b46c1bf5520e689f981d8_4","expected":[{"filename":"Advita DOCs.pdf","page":5}]}
+{"id":"q08","question":"what happens with the sticker thing after surgery","category":"vague_phrasing","expected_chunk_id":"b3f816c32b0b46c1bf5520e689f981d8_1","expected":[{"filename":"Advita DOCs.pdf","page":2}]}
+{"id":"q09","question":"Which endpoint powers the Backorders section of the Action Center?","category":"exact_term","expected_chunk_id":"b3f816c32b0b46c1bf5520e689f981d8_12","expected":[{"filename":"Advita DOCs.pdf","page":13}]}
+{"id":"q12","question":"What prefix identifies a Cimplicity API key?","category":"exact_term","expected_chunk_id":"def7d74f135e4c439c1ac7e5ed80d3ef_1","expected":[{"filename":"Cim Authentication.pdf","page":2}]}
+{"id":"q13","question":"What does requireApikey do?","category":"exact_term","expected_chunk_id":"def7d74f135e4c439c1ac7e5ed80d3ef_3","expected":[{"filename":"Cim Authentication.pdf","page":4}]}
+{"id":"q15","question":"What happens if disableSecurityCheck is true?","category":"exact_term","expected_chunk_id":"def7d74f135e4c439c1ac7e5ed80d3ef_5","expected":[{"filename":"Cim Authentication.pdf","page":6}]}
+{"id":"q17","question":"When does the API return 403 versus 401?","category":"specific_fact","expected_chunk_id":"def7d74f135e4c439c1ac7e5ed80d3ef_8","expected":[{"filename":"Cim Authentication.pdf","page":9}]}
+{"id":"q18","question":"How does user impersonation work and what permission does it need?","category":"semantic","expected_chunk_id":"def7d74f135e4c439c1ac7e5ed80d3ef_2","expected":[{"filename":"Cim Authentication.pdf","page":3}]}
+{"id":"q20","question":"What does the wildcard * mean in a permission string?","category":"exact_term","expected_chunk_id":"def7d74f135e4c439c1ac7e5ed80d3ef_7","expected":[{"filename":"Cim Authentication.pdf","page":8}]}
