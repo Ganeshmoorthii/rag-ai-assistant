@@ -38,7 +38,7 @@ def query(question: str, top_k: int | None = None) -> list[dict]:
     Returns chunk `id` alongside the text so downstream fusion and
     reranking can identify the same chunk coming from two retrievers.
     """
-    top_k = top_k or settings.top_k
+    top_k = settings.top_k if top_k is None else top_k
     results = _collection.query(query_texts=[question], n_results=top_k)
 
     matches = []

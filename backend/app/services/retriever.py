@@ -167,14 +167,19 @@ def apply_mmr(
     if not emb_map:
         return candidates[:top_k]
 
+    # A candidate missing its embedding can't be scored for relevance or
+    # redundancy -- treating it as 0/0 would make it look maximally novel
+    # and let it jump to the top of the selection. Drop it instead.
+    candidates = [c for c in candidates if c["id"] in emb_map]
+    if not candidates:
+        return []
+    ids = [c["id"] for c in candidates]
+
     q_emb = vector_store.embed_query(question)
 
     # Relevance to the query, computed in embedding space so it is on the
     # same scale as the diversity penalty.
-    rel: dict[str, float] = {}
-    for cid in ids:
-        emb = emb_map.get(cid)
-        rel[cid] = _cosine(q_emb, emb) if emb else 0.0
+    rel: dict[str, float] = {cid: _cosine(q_emb, emb_map[cid]) for cid in ids}
 
     selected: list[dict] = []
     remaining = list(candidates)
@@ -228,7 +233,7 @@ async def retrieve(
     call -- which is what lets the eval harness measure one variable at a
     time against a single running index.
     """
-    top_k = top_k or settings.top_k
+    top_k = settings.top_k if top_k is None else top_k
     hybrid = settings.hybrid_enabled if hybrid is None else hybrid
     do_rerank = settings.rerank_enabled if rerank is None else rerank
     do_rewrite = settings.rewrite_enabled if rewrite is None else rewrite

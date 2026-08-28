@@ -42,4 +42,15 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
         resp.raise_for_status()
         data = resp.json()
 
-    return data["choices"][0]["message"]["content"]
+    choices = data.get("choices")
+    if not choices:
+        # OpenRouter returns 200 with an error body for some failure modes
+        # (e.g. model unavailable, no credit), so raise_for_status() alone
+        # doesn't catch it.
+        error = data.get("error", {})
+        message = error.get("message") if isinstance(error, dict) else None
+        raise RuntimeError(
+            f"OpenRouter returned no choices: {message or data}"
+        )
+
+    return choices[0]["message"]["content"]
