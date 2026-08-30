@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { askQuestion } from '../api'
+import { IconMessage, IconLoader } from './icons'
 
 export default function ChatPanel() {
   const [question, setQuestion] = useState('')
@@ -44,7 +45,7 @@ export default function ChatPanel() {
           {messages.length === 0 ? (
             <div className="h-full flex items-center justify-center text-center">
               <div className="space-y-3">
-                <div className="text-4xl">💬</div>
+                <IconMessage width={28} height={28} className="mx-auto text-slate-600" />
                 <div className="text-slate-400">
                   <p className="text-sm font-medium">Start a conversation</p>
                   <p className="text-xs text-slate-500 mt-1">Ask anything about your documents</p>
@@ -73,7 +74,7 @@ export default function ChatPanel() {
                     <div className="ml-0 mr-auto max-w-xs lg:max-w-md">
                       <details className="text-xs">
                         <summary className="cursor-pointer text-slate-400 hover:text-slate-300 font-medium">
-                          📚 {m.sources.length} source{m.sources.length !== 1 ? 's' : ''}
+                          {m.sources.length} source{m.sources.length !== 1 ? 's' : ''}
                         </summary>
                         <ul className="mt-2 space-y-1 pl-3 border-l border-slate-600/50 text-slate-300">
                           {m.sources.map((s, j) => (
@@ -94,7 +95,7 @@ export default function ChatPanel() {
                 <div className="flex justify-start">
                   <div className="max-w-xs lg:max-w-md px-4 py-3 rounded-lg bg-slate-700/40 text-slate-100 rounded-bl-none">
                     <div className="flex items-center gap-2">
-                      <span className="animate-spin">⚙️</span>
+                      <IconLoader width={14} height={14} className="animate-spin text-blue-400" />
                       <span className="text-sm">Thinking...</span>
                     </div>
                   </div>

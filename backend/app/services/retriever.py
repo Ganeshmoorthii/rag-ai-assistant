@@ -25,6 +25,7 @@ what it did into a trace. The trace is what makes the difference between
 import time
 
 from app.core.config import settings
+from app.core.flow_log import flow_log
 from app.services import bm25, reranker, vector_store
 
 
@@ -239,6 +240,17 @@ async def retrieve(
     do_rewrite = settings.rewrite_enabled if rewrite is None else rewrite
     do_mmr = settings.mmr_enabled if mmr is None else mmr
 
+    flow_log(
+        "retrieval.started",
+        question=question,
+        top_k=top_k,
+        hybrid=hybrid,
+        rerank=do_rerank,
+        rewrite=do_rewrite,
+        mmr=do_mmr,
+        hyde=hyde,
+    )
+
     trace: dict = {
         "original_question": question,
         "config": {
@@ -272,6 +284,12 @@ async def retrieve(
             (time.perf_counter() - t0) * 1000, 1
         )
         trace["search_query"] = search_query
+        flow_log(
+            "retrieval.query_transform",
+            method=method,
+            before=question,
+            after=search_query,
+        )
         trace["stages"].append(
             {
                 "stage": "query_transform",
@@ -293,6 +311,7 @@ async def retrieve(
 
     t0 = time.perf_counter()
     dense_results = vector_store.query(search_query, top_k=fetch_n)
+    flow_log("retrieval.dense_results", query=search_query, results=dense_results)
     trace["timings_ms"]["dense_search"] = round((time.perf_counter() - t0) * 1000, 1)
     trace["stages"].append(
         {
@@ -310,6 +329,7 @@ async def retrieve(
         # rewrite is tuned for semantic search; the user's own wording is
         # where exact identifiers live, and paraphrasing can lose them.
         bm25_results = bm25.index.search(question, top_k=fetch_n)
+        flow_log("retrieval.bm25_results", query=question, results=bm25_results)
         trace["timings_ms"]["bm25_search"] = round(
             (time.perf_counter() - t0) * 1000, 1
         )
@@ -327,6 +347,7 @@ async def retrieve(
         candidates = reciprocal_rank_fusion(
             {"dense": dense_results, "bm25": bm25_results}
         )
+        flow_log("retrieval.rrf_results", results=candidates)
         trace["timings_ms"]["fusion"] = round((time.perf_counter() - t0) * 1000, 1)
 
         dense_ids = {c["id"] for c in dense_results[:top_k]}
@@ -355,6 +376,11 @@ async def retrieve(
         try:
             pool = candidates[: settings.rerank_candidates]
             reranked = reranker.rerank(question, pool, top_k=len(pool))
+            flow_log(
+                "retrieval.rerank_results",
+                model=settings.rerank_model,
+                results=reranked,
+            )
             trace["timings_ms"]["rerank"] = round(
                 (time.perf_counter() - t0) * 1000, 1
             )
@@ -379,6 +405,7 @@ async def retrieve(
             )
             candidates = reranked
         except RuntimeError as e:
+            flow_log("retrieval.rerank_skipped", error=str(e))
             trace["stages"].append(
                 {"stage": "rerank", "skipped": True, "reason": str(e)}
             )
@@ -388,6 +415,7 @@ async def retrieve(
         t0 = time.perf_counter()
         before_ids = [c["id"] for c in candidates[:top_k]]
         candidates = apply_mmr(question, candidates, top_k=top_k)
+        flow_log("retrieval.mmr_results", results=candidates)
         after_ids = [c["id"] for c in candidates]
         trace["timings_ms"]["mmr"] = round((time.perf_counter() - t0) * 1000, 1)
         trace["stages"].append(
@@ -408,6 +436,12 @@ async def retrieve(
     trace["retrieval_order_before_rerank"] = retrieval_order
     trace["timings_ms"]["total"] = round(
         sum(v for k, v in trace["timings_ms"].items() if k != "total"), 1
+    )
+
+    flow_log(
+        "retrieval.completed",
+        final_chunks=final,
+        timings_ms=trace["timings_ms"],
     )
 
     return {"chunks": final, "trace": trace}

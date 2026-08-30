@@ -46,6 +46,7 @@ import re
 import httpx
 
 from app.core.config import settings
+from app.core.flow_log import flow_log
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -74,8 +75,9 @@ async def _call_llm(system: str, user: str, max_tokens: int) -> str:
     if not settings.openrouter_api_key:
         raise RuntimeError("OPENROUTER_API_KEY is not set. Add it to backend/.env")
 
+    model = settings.rewrite_model.strip() or settings.openrouter_model
     payload = {
-        "model": settings.rewrite_model or settings.openrouter_model,
+        "model": model,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -92,6 +94,12 @@ async def _call_llm(system: str, user: str, max_tokens: int) -> str:
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(OPENROUTER_URL, json=payload, headers=headers)
+        flow_log(
+            "query_transform.llm_response",
+            model=payload["model"],
+            status_code=resp.status_code,
+            response_body=resp.text,
+        )
         resp.raise_for_status()
         data = resp.json()
 
@@ -179,8 +187,11 @@ async def rewrite_query(question: str) -> str:
     """
     try:
         raw = await _call_llm(REWRITE_SYSTEM, question, max_tokens=300)
-        return _clean_rewrite(raw, question)
+        cleaned = _clean_rewrite(raw, question)
+        flow_log("query_transform.rewrite_completed", raw=raw, cleaned=cleaned)
+        return cleaned
     except Exception:  # noqa: BLE001 - deliberate graceful degradation
+        flow_log("query_transform.rewrite_failed", question=question)
         return question
 
 
@@ -190,6 +201,9 @@ async def generate_hyde_document(question: str) -> str:
         doc = await _call_llm(HYDE_SYSTEM, question, max_tokens=200)
         # Append the original question so exact identifiers from the user
         # survive into the probe even if the LLM paraphrased them away.
-        return f"{doc}\n\n{question}" if doc else question
+        result = f"{doc}\n\n{question}" if doc else question
+        flow_log("query_transform.hyde_completed", raw=doc, result=result)
+        return result
     except Exception:  # noqa: BLE001
+        flow_log("query_transform.hyde_failed", question=question)
         return question

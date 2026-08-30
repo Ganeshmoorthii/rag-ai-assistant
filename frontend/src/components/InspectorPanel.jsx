@@ -1,5 +1,26 @@
 import { useEffect, useState } from 'react'
 import { askQuestion, getGoldenSet, getRetrievalSettings, triage } from '../api'
+import {
+  IconPlay,
+  IconSearch,
+  IconCheck,
+  IconCircle,
+  IconCopy,
+  IconAlert,
+  IconCheckCircle,
+  IconChevron,
+  IconInbox,
+  IconLoader,
+  IconSparkle,
+  IconFile,
+  IconX,
+} from './icons'
+
+const PIPELINE_STEPS = ['Rewriting', 'Retrieving', 'Reranking', 'Generating']
+
+function cnBadge(active) {
+  return active ? 'badge badge-blue' : 'badge badge-slate opacity-60'
+}
 
 export default function InspectorPanel() {
   const [question, setQuestion] = useState('')
@@ -16,9 +37,11 @@ export default function InspectorPanel() {
   const [retrievalOnly, setRetrievalOnly] = useState(false)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(0)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState({})
-  const [expandedDebug, setExpandedDebug] = useState(false)
+  const [expandedDebug, setExpandedDebug] = useState(true)
+  const [copied, setCopied] = useState(false)
 
   const [golden, setGolden] = useState([])
   const [selectedGolden, setSelectedGolden] = useState('')
@@ -48,6 +71,15 @@ export default function InspectorPanel() {
     }
   }
 
+  function runLoadingSteps() {
+    setLoadingStep(0)
+    const stepCount = strategies.rewrite ? PIPELINE_STEPS.length : PIPELINE_STEPS.length - 1
+    const interval = setInterval(() => {
+      setLoadingStep((s) => (s < stepCount - 1 ? s + 1 : s))
+    }, 450)
+    return () => clearInterval(interval)
+  }
+
   async function handleAsk(e) {
     e?.preventDefault()
     const q = question.trim()
@@ -56,6 +88,7 @@ export default function InspectorPanel() {
     setLoading(true)
     setError('')
     setTriageResult(null)
+    const stopSteps = runLoadingSteps()
     try {
       const res = await askQuestion(q, {
         ...strategies,
@@ -67,6 +100,7 @@ export default function InspectorPanel() {
       setError(err.message)
       setResult(null)
     } finally {
+      stopSteps()
       setLoading(false)
     }
   }
@@ -77,6 +111,7 @@ export default function InspectorPanel() {
 
     setLoading(true)
     setError('')
+    const stopSteps = runLoadingSteps()
     try {
       const res = await triage({
         question: g.question,
@@ -90,6 +125,7 @@ export default function InspectorPanel() {
     } catch (err) {
       setError(err.message)
     } finally {
+      stopSteps()
       setLoading(false)
     }
   }
@@ -162,7 +198,12 @@ export default function InspectorPanel() {
               disabled={loading || !question.trim()}
               className="btn-primary flex-1"
             >
-              {loading ? '🔄 Running...' : '▶ Run Retrieval'}
+              {loading ? (
+                <IconLoader width={16} height={16} className="animate-spin" />
+              ) : (
+                <IconPlay width={14} height={14} />
+              )}
+              {loading ? 'Running...' : 'Run Retrieval'}
             </button>
             {goldenQ && (
               <button
@@ -171,7 +212,8 @@ export default function InspectorPanel() {
                 disabled={loading}
                 className="btn-secondary"
               >
-                🔍 Diagnose
+                <IconSearch width={14} height={14} />
+                Diagnose
               </button>
             )}
           </div>
@@ -201,7 +243,11 @@ export default function InspectorPanel() {
                 onClick={() => toggle(key)}
                 className={`toggle-pill ${strategies[key] ? 'active' : ''}`}
               >
-                <span className="text-base">{strategies[key] ? '✓' : '○'}</span>
+                {strategies[key] ? (
+                  <IconCheck width={13} height={13} />
+                ) : (
+                  <IconCircle width={13} height={13} />
+                )}
                 <span>{label}</span>
               </button>
             ))}
@@ -256,23 +302,61 @@ export default function InspectorPanel() {
             </div>
           </div>
 
-          {/* System Configuration */}
-          {settings && (
-            <div className="border-t border-slate-700/30 pt-4">
-              <div className="text-xs font-mono text-slate-400 space-y-1 p-3 bg-slate-950/40 rounded-lg">
+          {/* Pipeline Summary */}
+          <div className="border-t border-slate-700/30 pt-4">
+            <div className="text-xs font-semibold text-slate-300 mb-3 tracking-wide uppercase">
+              Pipeline Summary
+            </div>
+            <div className="rounded-xl border border-slate-700/40 bg-slate-950/40 p-4 space-y-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                {[
+                  ['hybrid', 'Hybrid Search'],
+                  ['rewrite', 'Rewrite'],
+                  ['rerank', 'Rerank'],
+                ].map(([key, label], idx, arr) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span
+                      className={cnBadge(strategies[key])}
+                    >
+                      {label}
+                    </span>
+                    {idx < arr.length - 1 && <span className="text-slate-600">→</span>}
+                  </div>
+                ))}
+                <span className="text-slate-600">→</span>
+                <span className="badge badge-blue">Retrieval</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-800/60">
                 <div>
-                  <span className="text-slate-500">Defaults:</span>{' '}
-                  hybrid: {String(settings.hybrid_enabled)} · rerank: {String(settings.rerank_enabled)} · rewrite: {String(settings.rewrite_enabled)}
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+                    Candidate Pool
+                  </div>
+                  <div className="text-sm font-mono text-slate-100">{candidateK}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500">Config:</span> candidate_k: {settings.candidate_k} · rrf_k:{settings.rrf_k}
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+                    Final Results
+                  </div>
+                  <div className="text-sm font-mono text-slate-100">{topK}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500">Index:</span> BM25 {settings.bm25_index_size} chunks
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+                    RRF K
+                  </div>
+                  <div className="text-sm font-mono text-slate-100">{rrfK}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+                    BM25 Index
+                  </div>
+                  <div className="text-sm font-mono text-slate-100">
+                    {settings ? `${settings.bm25_index_size} chunks` : '—'}
+                  </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -282,13 +366,20 @@ export default function InspectorPanel() {
           borderColor: triageResult.verdict === 'retrieval_failure' ? 'rgba(239, 68, 68, 0.3)' : triageResult.verdict === 'partial_retrieval' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)',
           background: triageResult.verdict === 'retrieval_failure' ? 'rgba(239, 68, 68, 0.05)' : triageResult.verdict === 'partial_retrieval' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(16, 185, 129, 0.05)',
         }}>
-          <div className="card-header">
+          <div className="card-header flex items-center gap-2">
+            {triageResult.verdict === 'retrieval_failure' ? (
+              <IconX width={16} height={16} className="text-red-400" />
+            ) : triageResult.verdict === 'partial_retrieval' ? (
+              <IconAlert width={16} height={16} className="text-amber-400" />
+            ) : (
+              <IconCheckCircle width={16} height={16} className="text-emerald-400" />
+            )}
             <div className="card-title text-base">
               {triageResult.verdict === 'retrieval_failure'
-                ? '❌ Retrieval Failure'
+                ? 'Retrieval Failure'
                 : triageResult.verdict === 'partial_retrieval'
-                  ? '⚠️ Partial Retrieval'
-                  : '✓ Retrieval OK'}
+                  ? 'Partial Retrieval'
+                  : 'Retrieval OK'}
             </div>
           </div>
           <div className="card-content space-y-3">
@@ -317,21 +408,23 @@ export default function InspectorPanel() {
 
       {error && (
         <div className="card-modern" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)' }}>
-          <div className="card-content">
-            <p className="text-sm text-red-200">❌ {error}</p>
+          <div className="card-content flex items-center gap-2">
+            <IconAlert width={16} height={16} className="text-red-400 shrink-0" />
+            <p className="text-sm text-red-200">{error}</p>
           </div>
         </div>
       )}
 
       {/* Results Section */}
       {result && (
-        <>
+        <div className={loading ? 'opacity-40 pointer-events-none transition-opacity space-y-6' : 'space-y-6'}>
           {/* Results Grid */}
           <div className="results-grid">
             {/* Retrieved Documents Column */}
             <div>
               <div className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                <span>📄 Retrieved Documents</span>
+                <IconFile width={14} height={14} className="text-slate-400" />
+                <span>Retrieved Documents</span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200">
                   {result.sources?.length || 0}
                 </span>
@@ -354,7 +447,10 @@ export default function InspectorPanel() {
                           <div className="text-xs text-slate-400 mt-1">Page {s.page}</div>
                         </div>
                         {isExpected && (
-                          <span className="badge badge-green text-xs">✓ Expected</span>
+                          <span className="badge badge-green text-xs">
+                            <IconCheck width={11} height={11} />
+                            Expected
+                          </span>
                         )}
                       </div>
 
@@ -384,9 +480,14 @@ export default function InspectorPanel() {
                       <button
                         type="button"
                         onClick={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
-                        className="text-xs text-blue-300 hover:text-blue-200 mt-2 transition"
+                        className="flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200 mt-2 transition"
                       >
-                        {isOpen ? '▼ Hide full text' : '▶ Show full text'}
+                        <IconChevron
+                          width={12}
+                          height={12}
+                          className={`transition-transform ${isOpen ? '' : '-rotate-90'}`}
+                        />
+                        {isOpen ? 'Hide full text' : 'Show full text'}
                       </button>
 
                       {isOpen && (
@@ -398,9 +499,9 @@ export default function InspectorPanel() {
                   )
                 })}
 
-                {!result.sources || result.sources.length === 0 && (
+                {(!result.sources || result.sources.length === 0) && (
                   <div className="text-center py-8 text-slate-400">
-                    <div className="text-2xl mb-2">📭</div>
+                    <IconInbox width={28} height={28} className="mx-auto mb-2 text-slate-600" />
                     <p className="text-sm">No documents retrieved</p>
                   </div>
                 )}
@@ -409,7 +510,10 @@ export default function InspectorPanel() {
 
             {/* Generated Answer Column */}
             <div>
-              <div className="text-sm font-semibold text-slate-300 mb-4">✨ Generated Answer</div>
+              <div className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <IconSparkle width={14} height={14} className="text-slate-400" />
+                <span>Generated Answer</span>
+              </div>
 
               <div className="card-modern interactive">
                 <div className="card-content space-y-4">
@@ -442,10 +546,17 @@ export default function InspectorPanel() {
                         type="button"
                         onClick={() => {
                           navigator.clipboard.writeText(result.answer)
+                          setCopied(true)
+                          setTimeout(() => setCopied(false), 1500)
                         }}
                         className="btn-secondary w-full text-xs"
                       >
-                        📋 Copy Answer
+                        {copied ? (
+                          <IconCheck width={13} height={13} />
+                        ) : (
+                          <IconCopy width={13} height={13} />
+                        )}
+                        {copied ? 'Copied' : 'Copy Answer'}
                       </button>
                     </>
                   ) : (
@@ -467,8 +578,15 @@ export default function InspectorPanel() {
                 onClick={() => setExpandedDebug(!expandedDebug)}
                 className="w-full text-left card-header flex items-center justify-between cursor-pointer hover:bg-slate-700/20 transition"
               >
-                <div className="card-title">🔍 Retrieval Diagnostics</div>
-                <span className="text-xl">{expandedDebug ? '▼' : '▶'}</span>
+                <div className="card-title flex items-center gap-2">
+                  <IconSearch width={15} height={15} className="text-slate-400" />
+                  Retrieval Diagnostics
+                </div>
+                <IconChevron
+                  width={16}
+                  height={16}
+                  className={`text-slate-400 transition-transform ${expandedDebug ? '' : '-rotate-90'}`}
+                />
               </button>
 
               {expandedDebug && (
@@ -540,17 +658,56 @@ export default function InspectorPanel() {
               )}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Loading State */}
-      {loading && !result && (
+      {loading && (
         <div className="card-modern interactive">
-          <div className="card-content flex items-center gap-3">
-            <div className="animate-spin">⚙️</div>
-            <div>
+          <div className="card-content">
+            <div className="flex items-center gap-3 mb-4">
+              <IconLoader width={16} height={16} className="animate-spin text-blue-400" />
               <div className="text-sm font-medium text-slate-200">Running retrieval pipeline...</div>
-              <div className="text-xs text-slate-400 mt-1">This may take a moment</div>
+            </div>
+            <div className="flex items-center">
+              {PIPELINE_STEPS.map((step, idx) => {
+                const isSkipped = step === 'Rewriting' && !strategies.rewrite
+                const isDone = idx < loadingStep
+                const isActive = idx === loadingStep
+                return (
+                  <div key={step} className="flex items-center flex-1 last:flex-none">
+                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-mono transition-colors ${
+                          isSkipped
+                            ? 'border-slate-700 text-slate-600'
+                            : isDone
+                              ? 'border-blue-400/60 bg-blue-500/20 text-blue-200'
+                              : isActive
+                                ? 'border-blue-400 bg-blue-500/10 text-blue-300'
+                                : 'border-slate-700 text-slate-500'
+                        }`}
+                      >
+                        {isDone ? <IconCheck width={11} height={11} /> : idx + 1}
+                      </div>
+                      <span
+                        className={`text-[11px] whitespace-nowrap ${
+                          isSkipped ? 'text-slate-600 line-through' : isActive ? 'text-blue-200' : 'text-slate-400'
+                        }`}
+                      >
+                        {step}
+                      </span>
+                    </div>
+                    {idx < PIPELINE_STEPS.length - 1 && (
+                      <div
+                        className={`h-px flex-1 mx-2 mb-4 transition-colors ${
+                          isDone ? 'bg-blue-400/40' : 'bg-slate-700'
+                        }`}
+                      />
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

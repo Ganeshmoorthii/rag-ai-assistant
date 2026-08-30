@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listConfigs, runEvaluation } from '../api'
+import { IconPlay, IconLoader, IconAlert } from './icons'
 
 /**
  * THE MEASUREMENT PANEL
@@ -75,175 +76,216 @@ export default function EvalPanel() {
   }
 
   return (
-    <div className="panel-modern">
-      <h2 className="mb-3 text-2xl font-bold text-white">Measurement</h2>
-      <p className="mb-5 text-sm text-slate-300">
-        Run the golden set under each configuration, then compare two runs to
-        get a before/after number.
-      </p>
-
-      <div className="mb-4 flex items-center gap-3">
-        <label className="inline-input">
-          <span>top_k</span>
-          <input
-            type="number"
-            min="1"
-            max="10"
-            value={topK}
-            onChange={(e) => setTopK(Number(e.target.value))}
-          />
-        </label>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">Measurement</h2>
+        <p className="text-sm text-slate-400">
+          Run the golden set under each configuration, then compare two runs to get a before/after number.
+        </p>
       </div>
 
-      <div className="space-y-3">
-        {configs.map((c) => (
-          <div key={c.name} className="config-row">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <b className="text-base text-white">{c.name}</b>
-                {runs[c.name] && (
-                  <span className="badge ok">
-                    hit@3 {(runs[c.name].overall['hit_rate@3'] * 100).toFixed(1)}%
-                    {' · MRR '}
-                    {runs[c.name].overall.mrr.toFixed(3)}
-                  </span>
-                )}
-              </div>
-              <div className="mt-1 text-sm text-slate-400">{c.description}</div>
-            </div>
-            <button
-              type="button"
-              onClick={() => run(c.name)}
-              disabled={!!running}
-              className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+      {/* Run Configurations Card */}
+      <div className="card-modern interactive">
+        <div className="card-header flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="card-title">Evaluation Configurations</div>
+            <div className="card-subtitle">Run the golden set under each named pipeline config.</div>
+          </div>
+          <div className="settings-input">
+            <span>Top K</span>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={topK}
+              onChange={(e) => setTopK(Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="card-content space-y-2">
+          {configs.map((c) => (
+            <div
+              key={c.name}
+              className="flex items-center justify-between gap-4 rounded-xl border border-slate-700/40 bg-slate-950/40 px-4 py-3"
             >
-              {running === c.name ? 'running...' : 'run'}
-            </button>
-          </div>
-        ))}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-slate-100">{c.name}</span>
+                  {runs[c.name] && (
+                    <span className="badge badge-green text-xs font-mono">
+                      hit@3 {(runs[c.name].overall['hit_rate@3'] * 100).toFixed(1)}% · MRR{' '}
+                      {runs[c.name].overall.mrr.toFixed(3)}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">{c.description}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => run(c.name)}
+                disabled={!!running}
+                className="btn-secondary btn-small shrink-0"
+              >
+                {running === c.name ? (
+                  <IconLoader width={13} height={13} className="animate-spin" />
+                ) : (
+                  <IconPlay width={12} height={12} />
+                )}
+                {running === c.name ? 'Running' : 'Run'}
+              </button>
+            </div>
+          ))}
+
+          {configs.length === 0 && (
+            <div className="text-center py-6 text-sm text-slate-400">No configurations available</div>
+          )}
+        </div>
       </div>
 
-      {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
-
-      <h3 className="mt-6 text-lg font-semibold text-white">Before / After</h3>
-      <div className="mt-3 flex flex-wrap gap-3">
-        <label className="inline-input">
-          <span>before</span>
-          <select value={before} onChange={(e) => setBefore(e.target.value)}>
-            {Object.keys(runs).map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="inline-input">
-          <span>after</span>
-          <select value={after} onChange={(e) => setAfter(e.target.value)}>
-            {Object.keys(runs).map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {b && a ? (
-        <>
-          <table className="metrics mt-6">
-            <thead>
-              <tr>
-                <th>metric</th>
-                <th>{before}</th>
-                <th>{after}</th>
-                <th>delta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {['hit_rate@1', 'hit_rate@3', 'hit_rate@5'].map((m) => delta(m))}
-              {['recall@1', 'recall@3', 'recall@5'].map((m) => delta(m))}
-              {delta('mrr', false)}
-            </tbody>
-          </table>
-
-          <h3 className="mt-6 text-lg font-semibold text-white">hit-rate@3 by category</h3>
-          <table className="metrics mt-3">
-            <thead>
-              <tr>
-                <th>category</th>
-                <th>{before}</th>
-                <th>{after}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from(
-                new Set([
-                  ...Object.keys(b.by_category),
-                  ...Object.keys(a.by_category),
-                ])
-              )
-                .sort()
-                .map((cat) => {
-                  const bc = b.by_category[cat] || {}
-                  const ac = a.by_category[cat] || {}
-                  const bv = bc['hit_rate@3'] ?? 0
-                  const av = ac['hit_rate@3'] ?? 0
-                  const cls = av > bv ? 'up' : av < bv ? 'down' : ''
-                  return (
-                    <tr key={cat}>
-                      <td>{cat}</td>
-                      <td className="mono">
-                        {bc.hits}/{bc.n} ({(bv * 100).toFixed(0)}%)
-                      </td>
-                      <td className={`mono ${cls}`}>
-                        {ac.hits}/{ac.n} ({(av * 100).toFixed(0)}%)
-                      </td>
-                    </tr>
-                  )
-                })}
-            </tbody>
-          </table>
-
-          <div className="movement mt-6">
-            <div>
-              <h4 className="up">Fixed ({fixed.length})</h4>
-              <ul>
-                {fixed.map((q) => (
-                  <li key={q.id}>
-                    <b>{q.id}</b> [{q.category}] {q.question.slice(0, 50)}
-                  </li>
-                ))}
-                {!fixed.length && <li className="dim">none</li>}
-              </ul>
-            </div>
-            <div>
-              <h4 className="down">Broke ({broke.length})</h4>
-              <ul>
-                {broke.map((q) => (
-                  <li key={q.id}>
-                    <b>{q.id}</b> [{q.category}] {q.question.slice(0, 50)}
-                  </li>
-                ))}
-                {!broke.length && <li className="dim">none</li>}
-              </ul>
-            </div>
-            <div>
-              <h4>Still broken ({still.length})</h4>
-              <ul>
-                {still.map((q) => (
-                  <li key={q.id}>
-                    <b>{q.id}</b> [{q.category}] {q.question.slice(0, 50)}
-                  </li>
-                ))}
-                {!still.length && <li className="dim">none</li>}
-              </ul>
-            </div>
+      {error && (
+        <div className="card-modern" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)' }}>
+          <div className="card-content flex items-center gap-2">
+            <IconAlert width={16} height={16} className="text-red-400 shrink-0" />
+            <p className="text-sm text-red-200">{error}</p>
           </div>
-        </>
-      ) : (
-        <p className="mt-4 text-sm text-slate-400">Run at least two configurations to compare.</p>
+        </div>
       )}
+
+      {/* Before / After Card */}
+      <div className="card-modern interactive">
+        <div className="card-header">
+          <div className="card-title">Before / After Comparison</div>
+          <div className="card-subtitle">Pick two completed runs to see the delta.</div>
+        </div>
+
+        <div className="card-content space-y-6">
+          <div className="flex flex-wrap gap-4">
+            <div className="settings-input">
+              <span>Before</span>
+              <select value={before} onChange={(e) => setBefore(e.target.value)} className="w-32">
+                {Object.keys(runs).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="settings-input">
+              <span>After</span>
+              <select value={after} onChange={(e) => setAfter(e.target.value)} className="w-32">
+                {Object.keys(runs).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {b && a ? (
+            <>
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="metrics">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th>{before}</th>
+                      <th>{after}</th>
+                      <th>Delta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {['hit_rate@1', 'hit_rate@3', 'hit_rate@5'].map((m) => delta(m))}
+                    {['recall@1', 'recall@3', 'recall@5'].map((m) => delta(m))}
+                    {delta('mrr', false)}
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold text-slate-200 mb-3">Hit-rate@3 by category</div>
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="metrics">
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th>{before}</th>
+                        <th>{after}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from(
+                        new Set([...Object.keys(b.by_category), ...Object.keys(a.by_category)])
+                      )
+                        .sort()
+                        .map((cat) => {
+                          const bc = b.by_category[cat] || {}
+                          const ac = a.by_category[cat] || {}
+                          const bv = bc['hit_rate@3'] ?? 0
+                          const av = ac['hit_rate@3'] ?? 0
+                          const cls = av > bv ? 'up' : av < bv ? 'down' : ''
+                          return (
+                            <tr key={cat}>
+                              <td>{cat}</td>
+                              <td className="mono">
+                                {bc.hits}/{bc.n} ({(bv * 100).toFixed(0)}%)
+                              </td>
+                              <td className={`mono ${cls}`}>
+                                {ac.hits}/{ac.n} ({(av * 100).toFixed(0)}%)
+                              </td>
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="movement">
+                <div>
+                  <h4 className="up">Fixed ({fixed.length})</h4>
+                  <ul>
+                    {fixed.map((q) => (
+                      <li key={q.id}>
+                        <b>{q.id}</b> [{q.category}] {q.question.slice(0, 50)}
+                      </li>
+                    ))}
+                    {!fixed.length && <li className="text-subtle">none</li>}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="down">Broke ({broke.length})</h4>
+                  <ul>
+                    {broke.map((q) => (
+                      <li key={q.id}>
+                        <b>{q.id}</b> [{q.category}] {q.question.slice(0, 50)}
+                      </li>
+                    ))}
+                    {!broke.length && <li className="text-subtle">none</li>}
+                  </ul>
+                </div>
+                <div>
+                  <h4>Still broken ({still.length})</h4>
+                  <ul>
+                    {still.map((q) => (
+                      <li key={q.id}>
+                        <b>{q.id}</b> [{q.category}] {q.question.slice(0, 50)}
+                      </li>
+                    ))}
+                    {!still.length && <li className="text-subtle">none</li>}
+                  </ul>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8 text-slate-400">
+              <p className="text-sm">Run at least two configurations to compare.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

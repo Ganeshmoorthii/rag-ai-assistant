@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { uploadDocument, listDocuments, deleteDocument } from '../api'
 import { cn } from '../lib/utils'
+import { IconUpload, IconFile, IconTrash, IconInbox, IconLoader } from './icons'
 
 export default function DocumentPanel() {
   const [documents, setDocuments] = useState([])
@@ -106,17 +107,22 @@ export default function DocumentPanel() {
             />
             
             <div className="text-center">
-              <div className="text-2xl mb-2">📄</div>
+              <IconUpload
+                width={20}
+                height={20}
+                className={cn('mx-auto mb-2', dragActive ? 'text-blue-300' : 'text-slate-400')}
+              />
               <div className="text-sm font-semibold text-slate-200 mb-1">
                 {dragActive ? 'Drop PDF here' : 'Upload PDF'}
               </div>
               <div className="text-xs text-slate-400">
-                Drag and drop or click to browse
+                Add documents to your retrieval index
               </div>
             </div>
 
             {uploading && (
-              <div className="absolute inset-0 bg-blue-500/5 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <div className="absolute inset-0 bg-blue-500/5 rounded-xl flex items-center justify-center gap-2 backdrop-blur-sm">
+                <IconLoader width={14} height={14} className="animate-spin text-blue-300" />
                 <div className="text-sm text-blue-300 font-medium">Indexing...</div>
               </div>
             )}
@@ -137,7 +143,7 @@ export default function DocumentPanel() {
                   className="group rounded-lg border border-slate-700/40 bg-slate-950/50 hover:bg-slate-900/70 hover:border-slate-600/60 p-3 transition-all duration-200"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-lg mt-0.5">📑</div>
+                    <IconFile width={16} height={16} className="text-slate-400 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-slate-100 truncate">
                         {doc.filename}
@@ -156,20 +162,21 @@ export default function DocumentPanel() {
                       type="button"
                       onClick={() => handleDelete(doc.doc_id)}
                       className={cn(
-                        'btn-icon opacity-0 group-hover:opacity-100 transition-opacity',
+                        'btn-icon opacity-0 group-hover:opacity-100 transition-opacity shrink-0',
                         'text-slate-400 hover:text-red-400 hover:bg-red-500/10'
                       )}
                       title="Delete document"
                     >
-                      ✕
+                      <IconTrash width={14} height={14} />
                     </button>
                   </div>
                 </div>
               ))
             ) : (
               <div className="text-center py-6 text-slate-400">
-                <div className="text-3xl mb-2">📭</div>
+                <IconInbox width={26} height={26} className="mx-auto mb-2 text-slate-600" />
                 <div className="text-sm">No documents yet</div>
+                <div className="text-xs text-slate-500 mt-1">Upload a PDF to get started</div>
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@ import ChatPanel from './components/ChatPanel'
 import DocumentPanel from './components/DocumentPanel'
 import EvalPanel from './components/EvalPanel'
 import InspectorPanel from './components/InspectorPanel'
+import { IconDatabase, IconSettings } from './components/icons'
 import { cn } from './lib/utils'
 
 const TABS = [
@@ -19,16 +20,21 @@ export default function App() {
       {/* Header */}
       <header className="app-header">
         <div className="header-brand">
-          <div className="header-brand-icon">🤖</div>
+          <div className="header-brand-icon">
+            <IconDatabase width={18} height={18} />
+          </div>
           <div className="header-brand-text">
             <div className="header-brand-title">RAG Assistant</div>
             <div className="header-brand-subtitle">Retrieval Debugger</div>
           </div>
         </div>
-        
+
         <div className="header-status">
           <span className="status-indicator"></span>
           <span className="status-text">System Ready</span>
+          <button type="button" className="btn-icon" title="Settings">
+            <IconSettings width={16} height={16} />
+          </button>
         </div>
       </header>
 
