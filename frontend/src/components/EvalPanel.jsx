@@ -75,43 +75,47 @@ export default function EvalPanel() {
   }
 
   return (
-    <div className="panel">
-      <h2>Measurement</h2>
-      <p className="hint">
+    <div className="panel-modern">
+      <h2 className="mb-3 text-2xl font-bold text-white">Measurement</h2>
+      <p className="mb-5 text-sm text-slate-300">
         Run the golden set under each configuration, then compare two runs to
         get a before/after number.
       </p>
 
-      <label className="inline">
-        top_k
-        <input
-          type="number"
-          min="1"
-          max="10"
-          value={topK}
-          onChange={(e) => setTopK(Number(e.target.value))}
-          style={{ width: 60, marginLeft: 6 }}
-        />
-      </label>
+      <div className="mb-4 flex items-center gap-3">
+        <label className="inline-input">
+          <span>top_k</span>
+          <input
+            type="number"
+            min="1"
+            max="10"
+            value={topK}
+            onChange={(e) => setTopK(Number(e.target.value))}
+          />
+        </label>
+      </div>
 
-      <div className="config-list">
+      <div className="space-y-3">
         {configs.map((c) => (
           <div key={c.name} className="config-row">
-            <div>
-              <b>{c.name}</b>
-              {runs[c.name] && (
-                <span className="badge ok">
-                  hit@3 {(runs[c.name].overall['hit_rate@3'] * 100).toFixed(1)}%
-                  {' · MRR '}
-                  {runs[c.name].overall.mrr.toFixed(3)}
-                </span>
-              )}
-              <div className="hint">{c.description}</div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <b className="text-base text-white">{c.name}</b>
+                {runs[c.name] && (
+                  <span className="badge ok">
+                    hit@3 {(runs[c.name].overall['hit_rate@3'] * 100).toFixed(1)}%
+                    {' · MRR '}
+                    {runs[c.name].overall.mrr.toFixed(3)}
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-sm text-slate-400">{c.description}</div>
             </div>
             <button
               type="button"
               onClick={() => run(c.name)}
               disabled={!!running}
+              className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {running === c.name ? 'running...' : 'run'}
             </button>
@@ -119,12 +123,12 @@ export default function EvalPanel() {
         ))}
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
 
-      <h3>Before / After</h3>
-      <div className="strategy-row">
-        <label className="inline">
-          before
+      <h3 className="mt-6 text-lg font-semibold text-white">Before / After</h3>
+      <div className="mt-3 flex flex-wrap gap-3">
+        <label className="inline-input">
+          <span>before</span>
           <select value={before} onChange={(e) => setBefore(e.target.value)}>
             {Object.keys(runs).map((n) => (
               <option key={n} value={n}>
@@ -133,8 +137,8 @@ export default function EvalPanel() {
             ))}
           </select>
         </label>
-        <label className="inline">
-          after
+        <label className="inline-input">
+          <span>after</span>
           <select value={after} onChange={(e) => setAfter(e.target.value)}>
             {Object.keys(runs).map((n) => (
               <option key={n} value={n}>
@@ -147,7 +151,7 @@ export default function EvalPanel() {
 
       {b && a ? (
         <>
-          <table className="metrics">
+          <table className="metrics mt-6">
             <thead>
               <tr>
                 <th>metric</th>
@@ -163,8 +167,8 @@ export default function EvalPanel() {
             </tbody>
           </table>
 
-          <h3>hit-rate@3 by category</h3>
-          <table className="metrics">
+          <h3 className="mt-6 text-lg font-semibold text-white">hit-rate@3 by category</h3>
+          <table className="metrics mt-3">
             <thead>
               <tr>
                 <th>category</th>
@@ -201,7 +205,7 @@ export default function EvalPanel() {
             </tbody>
           </table>
 
-          <div className="movement">
+          <div className="movement mt-6">
             <div>
               <h4 className="up">Fixed ({fixed.length})</h4>
               <ul>
@@ -225,7 +229,6 @@ export default function EvalPanel() {
               </ul>
             </div>
             <div>
-              {/* The question the mentor explicitly asks. */}
               <h4>Still broken ({still.length})</h4>
               <ul>
                 {still.map((q) => (
@@ -239,7 +242,7 @@ export default function EvalPanel() {
           </div>
         </>
       ) : (
-        <p className="hint">Run at least two configurations to compare.</p>
+        <p className="mt-4 text-sm text-slate-400">Run at least two configurations to compare.</p>
       )}
     </div>
   )
