@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Markdown from 'react-markdown'
 import { askQuestion, getGoldenSet, getRetrievalSettings, triage } from '../api'
 import {
   IconPlay,
@@ -519,8 +520,8 @@ export default function InspectorPanel() {
                 <div className="card-content space-y-4">
                   {result.answer ? (
                     <>
-                      <div className="text-sm leading-relaxed text-slate-100">
-                        {result.answer}
+                      <div className="text-sm leading-relaxed text-slate-100 markdown-body">
+                        <Markdown>{result.answer}</Markdown>
                       </div>
 
                       <div className="border-t border-slate-700/30 pt-4">

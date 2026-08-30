@@ -306,6 +306,85 @@ textarea {
   letter-spacing: 0.01em;
 }
 
+/* Rendered markdown (LLM answers) */
+.markdown-body p {
+  @apply mb-3 last:mb-0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  @apply font-semibold text-slate-100 mt-4 mb-2 first:mt-0;
+}
+
+.markdown-body h1 {
+  @apply text-lg;
+}
+
+.markdown-body h2 {
+  @apply text-base;
+}
+
+.markdown-body h3,
+.markdown-body h4 {
+  @apply text-sm;
+}
+
+.markdown-body ul {
+  @apply list-disc pl-5 mb-3 space-y-1 last:mb-0;
+}
+
+.markdown-body ol {
+  @apply list-decimal pl-5 mb-3 space-y-1 last:mb-0;
+}
+
+.markdown-body li > p {
+  @apply mb-0;
+}
+
+.markdown-body a {
+  @apply text-blue-300 underline underline-offset-2 hover:text-blue-200;
+}
+
+.markdown-body strong {
+  @apply font-semibold text-slate-50;
+}
+
+.markdown-body blockquote {
+  @apply border-l-2 border-slate-600 pl-3 text-slate-300 italic my-3;
+}
+
+.markdown-body code {
+  @apply px-1.5 py-0.5 rounded bg-slate-800/80 text-blue-200 text-xs;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.markdown-body pre {
+  @apply p-3 rounded-lg bg-slate-950/60 border border-slate-700/40 overflow-x-auto mb-3 last:mb-0;
+}
+
+.markdown-body pre code {
+  @apply bg-transparent p-0 text-slate-200;
+}
+
+.markdown-body table {
+  @apply w-full text-xs border-collapse mb-3;
+}
+
+.markdown-body th,
+.markdown-body td {
+  @apply border border-slate-700/50 px-2 py-1 text-left;
+}
+
+.markdown-body th {
+  @apply bg-slate-800/50 text-slate-300;
+}
+
+.markdown-body hr {
+  @apply border-slate-700/50 my-3;
+}
+
 /* Loading animation */
 @keyframes shimmer {
   0% {

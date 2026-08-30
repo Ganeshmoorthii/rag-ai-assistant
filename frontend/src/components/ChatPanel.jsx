@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Markdown from 'react-markdown'
 import { askQuestion } from '../api'
 import { IconMessage, IconLoader } from './icons'
 
@@ -66,7 +67,13 @@ export default function ChatPanel() {
                             : 'bg-slate-700/40 text-slate-100 rounded-bl-none'
                       }`}
                     >
-                      <p className="text-sm leading-relaxed">{m.text}</p>
+                      {m.role === 'assistant' ? (
+                        <div className="text-sm leading-relaxed markdown-body">
+                          <Markdown>{m.text}</Markdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-relaxed">{m.text}</p>
+                      )}
                     </div>
                   </div>
 
