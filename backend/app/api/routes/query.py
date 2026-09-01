@@ -68,7 +68,7 @@ async def query_documents(payload: QueryRequest):
         )
         raise HTTPException(
             status_code=502,
-            detail=f"OpenRouter request failed: {e.response.status_code} {e.response.text}",
+            detail=f"LLM provider request failed: {e.response.status_code} {e.response.text}",
         )
 
     flow_log("response.completed", answer=answer, sources=matches)

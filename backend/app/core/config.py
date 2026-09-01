@@ -2,8 +2,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    openrouter_enabled: bool = True
     openrouter_api_key: str = ""
+    groq_api_key: str = ""
     openrouter_model: str = "anthropic/claude-3.5-sonnet"
+    groq_model: str = "openai/gpt-oss-20b"
 
     embedding_model: str = "all-MiniLM-L6-v2"
 
@@ -42,6 +45,24 @@ class Settings(BaseSettings):
     # MMR: diversity filter, drops near-duplicate chunks from the results.
     mmr_enabled: bool = False
     mmr_lambda: float = 0.7  # 1.0 = pure relevance, 0.0 = pure diversity
+
+    @property
+    def llm_api_key(self) -> str:
+        return self.openrouter_api_key if self.openrouter_enabled else self.groq_api_key
+
+    @property
+    def llm_model(self) -> str:
+        return self.openrouter_model if self.openrouter_enabled else self.groq_model
+
+    @property
+    def llm_url(self) -> str:
+        if self.openrouter_enabled:
+            return "https://openrouter.ai/api/v1/chat/completions"
+        return "https://api.groq.com/openai/v1/chat/completions"
+
+    @property
+    def llm_provider(self) -> str:
+        return "OpenRouter" if self.openrouter_enabled else "Groq"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

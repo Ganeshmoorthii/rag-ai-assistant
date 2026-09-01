@@ -48,8 +48,6 @@ import httpx
 from app.core.config import settings
 from app.core.flow_log import flow_log
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-
 REWRITE_SYSTEM = (
     "You rewrite user questions into concise search queries for a document "
     "retrieval system. Rules:\n"
@@ -72,10 +70,11 @@ HYDE_SYSTEM = (
 
 
 async def _call_llm(system: str, user: str, max_tokens: int) -> str:
-    if not settings.openrouter_api_key:
-        raise RuntimeError("OPENROUTER_API_KEY is not set. Add it to backend/.env")
+    if not settings.llm_api_key:
+        key_name = "OPENROUTER_API_KEY" if settings.openrouter_enabled else "GROQ_API_KEY"
+        raise RuntimeError(f"{key_name} is not set. Add it to backend/.env")
 
-    model = settings.rewrite_model.strip() or settings.openrouter_model
+    model = settings.rewrite_model.strip() or settings.llm_model
     payload = {
         "model": model,
         "messages": [
@@ -88,15 +87,16 @@ async def _call_llm(system: str, user: str, max_tokens: int) -> str:
         "temperature": 0,
     }
     headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "Authorization": f"Bearer {settings.llm_api_key}",
         "Content-Type": "application/json",
     }
 
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(OPENROUTER_URL, json=payload, headers=headers)
+        resp = await client.post(settings.llm_url, json=payload, headers=headers)
         flow_log(
             "query_transform.llm_response",
             model=payload["model"],
+            provider=settings.llm_provider,
             status_code=resp.status_code,
             response_body=resp.text,
         )
