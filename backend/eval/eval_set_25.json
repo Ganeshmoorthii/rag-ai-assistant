@@ -1,7 +1,349 @@
 {
   "cases": [
     {
-      "case_id": "case_01",
+      "case_id": "Q1",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "What are the order types and what does each do?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.8]\n[Advita DOCs.pdf p.3]\n[Advita DOCs.pdf p.7]\n[Advita DOCs.pdf p.6]",
+      "answer": "**Order Types (as described in the Advita Docs)**  \n(From *Advita\u202fDOCs.pdf*, pages\u202f7 &\u202f6)\n\n| Order Type | What It Does | Key Components that are Created |\n|------------|--------------|---------------------------------|\n| **BILL\u2011RESTOCK** | The order both creates a bill for the hospital **and** creates a restocking shipment for the rep. | \u2022\u202f`BillingComponent` with one or more `BillingItem`s<br>\u2022\u202f`ShippingComponent` with one or more `ShippingItem`s | \n| **BILL\u2011ONLY** | The order is for a bill to the hospital only; no restocking is required. | \u2022\u202f`BillingComponent` with one or more `BillingItem`s | \n| **(Other types are possible but not listed in the provided documents)** | The documentation says \u201cetc.\u201d after the two above, so other variants may exist, but they are not defined in the shared context. | \u2013 |\n\n**Why the distinction matters**\n\n* **BillingItem** \u2013 Represents a product that was used in a surgery (or otherwise consumed) and that must be billed to the hospital.  \n* **ShippingItem** \u2013 Represents a product that the rep needs to receive back (restock) after the surgery.\n\nWhen an order is of type **BILL\u2011RESTOCK**, the system automatically creates both a billing record and a restocking shipment. When it is **BILL\u2011ONLY**, only the billing record is created, and no restock shipment is generated. This separation lets the system decide whether to generate a shipping component in addition to billing based on the order\u2019s purpose.",
+      "must_contain": [
+        "BILL-RESTOCK",
+        "BILL-ONLY",
+        "RESTOCK-ONLY",
+        "INSTRUMENT-QUOTE",
+        "DIRECT-SALE"
+      ],
+      "pass_rate": 0.4,
+      "ground_truth": "Must contain: BILL-RESTOCK, BILL-ONLY, RESTOCK-ONLY, INSTRUMENT-QUOTE, DIRECT-SALE"
+    },
+    {
+      "case_id": "Q2",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "What is a stickersheet and what happens to it in Cimplicity?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.2]\n[advita FE.pdf p.1]\n[advita FE.pdf p.3]\n[Advita DOCs.pdf p.12]",
+      "answer": "A **stickersheet** is a physical label that comes with every implant or device.  \n- It contains the lot and serial numbers of the product.  \n- The label is peeled off and affixed to the patient\u2019s surgical record as a legal/regulatory requirement.  \n- **(Advita\u202fDOCs.pdf p.2)**  \n\nIn **Cimplicity** the stickersheet is handled as follows:  \n\n1. **Capture** \u2013 The rep scans or photographs the stickersheet.  \n2. **Upload** \u2013 The image is uploaded to Cimplicity and stored in Azure Blob Storage (files module).  \n3. **OCR** \u2013 Cimplicity runs Google Cloud Vision OCR on the image, automatically extracts the lot/serial numbers and color\u2011codes any annotations (Blue = Valid, Red = Discrepancy).  \n4. **Verification** \u2013 AI (Google Gemini) compares the extracted serial numbers to the items billed. If a mismatch is detected, a verification discrepancy is created; otherwise the order is marked as \u201cCOMPLETED.\u201d  \n   - **(Advita\u202fDOCs.pdf p.12)**  \n\nThus, the stickersheet moves from a physical label on the surgical record to a digital image that Cimplicity processes for data extraction and billing verification.",
+      "must_contain": [
+        "regulatory",
+        "Azure Blob",
+        "Vision OCR",
+        "blue",
+        "red"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: regulatory, Azure Blob, Vision OCR, blue, red"
+    },
+    {
+      "case_id": "Q3",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "How does AI verification of an order work, and what does `verificationStatus` mean?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.12]\n[Advita DOCs.pdf p.8]\n[Cim Authentication.pdf p.5]\n[Advita DOCs.pdf p.11]",
+      "answer": "**AI verification of an order**\n\n1. **Trigger** \u2013 When an order is submitted the system posts to  \n   `POST /orders/verification`.\n\n2. **Image analysis** \u2013 A Google\u202fGemini model reads the stickersheet image that the rep uploads.\n\n3. **Serial\u2011number comparison** \u2013 Gemini extracts the serial numbers from the image and compares each one to the serial numbers listed on the order\u2019s *billingItems*.\n\n4. **Outcome**  \n   * If every serial number on the image matches a billing item, the order is marked **COMPLETED**.  \n   * If one or more serial numbers do not match, a `VerificationDiscrepancy` is created (capturing the reason, the mismatched serial number, and its status).  \n   * If the rep didn\u2019t upload a stickersheet or chooses to skip the check, the order receives a **SKIPPED** status.  \n   * (Restock\u2011only orders normally have no stickersheet, so they are automatically SKIPPED.)\n\n   The logic is documented in **Advita DOCs.pdf \u2013 page\u202f12**.\n\n**`verificationStatus` field**\n\nThe `verificationStatus` field (see **Advita DOCs.pdf \u2013 page\u202f8**) reflects the result of that AI check:\n\n| Value | Meaning |\n|-------|---------|\n| **COMPLETED** | Al (the AI system) checked the stickersheet and all serial numbers matched. |\n| **SKIPPED** | No stickersheet was submitted, or the rep skipped the check. |\n\nSo, `verificationStatus` tells you whether the order went through the AI verification process and whether it passed (`COMPLETED`) or was bypassed (`SKIPPED`). If the AI found mismatches, a `VerificationDiscrepancy` is logged, but the status remains `COMPLETED` or `SKIPPED`\u2014the discrepancy is handled separately.",
+      "must_contain": [
+        "Gemini",
+        "COMPLETED",
+        "SKIPPED"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: Gemini, COMPLETED, SKIPPED"
+    },
+    {
+      "case_id": "Q4",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "Which ERP does the EBI module pull inventory data from?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.3]\n[Advita DOCs.pdf p.4]\n[Advita DOCs.pdf p.12]\n[Advita DOCs.pdf p.14]",
+      "answer": "The EBI module pulls inventory data from **SAP** (the company\u2019s ERP system).\u3010Advita DOCs.pdf p.3\u3011",
+      "must_contain": [
+        "SAP",
+        "QAD"
+      ],
+      "pass_rate": 0.5,
+      "ground_truth": "Must contain: SAP, QAD"
+    },
+    {
+      "case_id": "Q5",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "How does a ShippingItem get approved or rejected?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.8]\n[Advita DOCs.pdf p.9]\n[Cim Authentication.pdf p.6]\n[Advita DOCs.pdf p.7]",
+      "answer": "**ShippingItem approval / rejection flow** (see *Advita DOCs.pdf*\u202fp.\u202f9)\n\n1. **Item creation**  \n   \u2022 A new `ShippingItem` is created as part of an order.  \n   \u2022 The system first checks the `location` field.\n\n2. **Loaner vs. consignment**  \n   \u2022 If `location` ends in `-L` \u2192 it\u2019s a *loaner* item.  \n   \u2022 Otherwise it\u2019s a *consignment* item and is sent to approval.\n\n3. **Consignment approval logic**  \n   \u2022 The status is initially set to **PENDING_APPROVAL** and `reviewReason` is set to `'LOANER'` for loaner items.  \n   \u2022 For consignment items the system queries the `restockMaxes` table to determine the maximum quantity that can be shipped (`maxes`).  \n   \u2022 If the requested quantity is **less than** the `maxes` value, the item is **approved** (`status = APPROVED`).  \n   \u2022 If the quantity **exceeds** the maximum, the item is **rejected** (`status = REJECTED`).  \n   \u2022 The reason for the decision is recorded:\n     - `approvalReason` (for approved items)  \n     - `rejectionReason` (for rejected items, e.g., \u201cHealthy target\u201d, \u201cNot at target levels\u201d, \u201ckit level\u201d).\n\n4. **Audit trail**  \n   \u2022 The `calculationTrail` field logs the full decision: item number, agency, restock max, requested quantity, and whether the decision was fully approved, partially approved, or rejected.\n\n5. **Special cases**  \n   - **Deprecation** \u2013 old item numbers mapped to new ones, with combined maxes.  \n   - **Exception** \u2013 if `maxToShipOut = @` but the quantity is 1, the system allows it regardless of the max.\n\nIn summary, a `ShippingItem` is approved or rejected based on the location type, the requested quantity compared to the restock maximum, and the resulting status/reason recorded in the item\u2019s fields.",
+      "must_contain": [
+        "-L",
+        "restockMax",
+        "calculationTrail"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: -L, restockMax, calculationTrail"
+    },
+    {
+      "case_id": "Q6",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "What's the difference between a BillingItem and a ShippingItem?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.8]\n[Advita DOCs.pdf p.7]\n[Advita DOCs.pdf p.5]\n[Advita DOCs.pdf p.9]",
+      "answer": "**BillingItem**  \n*\u202fFound inside an order\u2019s **BillingComponent** (an order that is billed).  \n*\u202fCarries **pricing data** \u2013 `price`, `customPrice` (and any discounts or caps).  \n*\u202fHas fields that track the approval/ review state (`status`, `reviewReason`) and the\n  link to the file that contains the stickersheet photos (`fileId`).  \n*\u202fNo separate \u201crestock\u201d logic is attached \u2013 it is simply a billed line item.  \n*\u202fThe actual product details (item number, description, serial/lot number, location,\n  etc.) live in the shared **Item** model that the BillingItem references.  \n*Source: Advita\u202fDOCs.pdf p.8 (key fields on a BillingItem).*\n\n**ShippingItem**  \n*\u202fFound inside an order\u2019s **ShippingComponent** (an order that is restocked or shipped).  \n*\u202fDoes **not** store pricing \u2013 it records only the **quantity** to ship.  \n*\u202fTracks the approval workflow for loaner versus consignment stock:\n  * `status`, `reviewReason` and `approvalReason` (e.g., \u201cLOANER\u201d, \u201cREJECTED\u201d).\n  * Approval is automatic for non\u2011loaner items; loaner items are checked against\n    the `restockMaxes` table and may need human approval.  \n*\u202fContains fields that identify the stock in the warehouse\n  (`location`, `serialNumber`, `lotOrSerial`, `status` \u201cA\u201d/\u201cR\u201d).  \n*\u202fLinked to restock logic through the `restockMax` table and the\n  `calculationTrail` log.  \n*\u202fLike BillingItem, a ShippingItem also references the shared **Item** model for\n  product details.  \n*Source: Advita\u202fDOCs.pdf p.9 (ShippingItem approval logic) and p.7 (order structure).*\n\n**Bottom line:**  \n*BillingItem* is for billed orders and holds pricing; *ShippingItem* is for restock/shipping orders, holds quantity/stock info and an approval workflow, and has no pricing. Both use the same underlying Item model for product data.",
+      "must_contain": [
+        "BillingComponent",
+        "ShippingComponent",
+        "Item"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: BillingComponent, ShippingComponent, Item"
+    },
+    {
+      "case_id": "Q7",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "Walk through the order lifecycle statuses.",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.3]\n[Advita DOCs.pdf p.14]\n[Advita DOCs.pdf p.8]\n[Advita DOCs.pdf p.6]",
+      "answer": "**Order\u2011Lifecycle Status Flow (as described in the Advita documentation)**  \n\n| Stage | What happens | Status / field values | Where it is tracked |\n|-------|--------------|-----------------------|---------------------|\n| **1. Order creation** | A rep creates a new order in Cimplicity after a surgery or restock request. The order is first stored locally and assigned a *transaction number* (`tNumber`). | `status = \u201cDraft\u201d` (or \u201cNew\u201d) \u2013 the default value when the record is first created. | In the **Orders** module (p.3). |\n| **2. Purchase\u2011Order (PO) validation** | The system pulls the hospital\u2019s PO number. If the PO is missing the order is flagged in the Action Center as *\u201cMissing PO\u201d*. | `status` remains \u201cDraft\u201d; the *PO status* field is set to *Missing*. | Action Center (p.3). |\n| **3. AI / OCR verification** | The rep uploads a sticker sheet. AI checks that the stickers match the billed items (Order Verification). The field `verificationStatus` records the result. | `verificationStatus = \u201cCOMPLETED\u201d` (or \u201cSKIPPED\u201d). If the AI cannot verify, the order stays in \u201cDraft\u201d until a rep manually resolves it. | Orders module, status field (p.8). |\n| **4. Submission to QAD (ERP)** | Once verified, the order is written to QAD. The flag `inQad = true` is set. | `status` transitions to *\u201cSubmitted to QAD\u201d* (or \u201cIn QAD\u201d). The `inQad` field is `true`. | Orders module, status field and `inQad` (p.8). |\n| **5. Warehouse dispatch** | After QAD records the order, a CS\u2011FAX is sent to the warehouse (`inCsFax = true`). Warehouse ships the replacement stock (consignment or loaner). | `status` changes to *\u201cShipped\u201d* (or \u201cIn Transit\u201d). `inCsFax` is `true`. | Orders module, `inCsFax` and status (p.8). |\n| **6. Back\u2011order handling (if needed)** | If an item is unavailable, it becomes a back\u2011order. The **Backorder** module queries SAP in real\u2011time and shows the status in the Action Center. | `status` for the specific line item stays *\u201cBack\u2011ordered\u201d*; the overall order status remains *\u201cShipped\u201d* (partial). | Backorder module (p.3). |\n| **7. Restocking / Demand planning** | For restock requests, the **Demand Planning** module checks the rep\u2019s max level. If stock is low, a restock order is created and goes through the same lifecycle. | Status flows identically to a normal order; the difference is the *Order Type* (e.g., *BILL\u2011RESTOCK* vs *BILL\u2011ONLY*). | Demand Planning (p.3). |\n| **8. Completion** | After the replacement arrives and is confirmed, the order is marked complete. Revenue and analytics are updated (POST `/ebi/updateOrder`). | `status = \u201cCompleted\u201d`. `inQad` and `inCsFax` remain `true`. | Post\u2011order analytics (p.14). |\n| **9. Post\u2011processing** | The **EBI** module pulls the final inventory data from SAP, updates analytics, and records revenue (only *BILL\u2011ONLY* + *BILL\u2011RESTOCK*). Loaner cases are counted separately via `reviewReason`. | Final status remains *\u201cCompleted\u201d*; analytics tables updated. | EBI module and analytics flow (p.3, p.14). |\n\n### Key Take\u2011aways\n- **`status`** is the primary field that tracks the order\u2019s life stage.\n- Flags such as **`inQad`** and **`inCsFax`** indicate when an order has been pushed to the ERP or sent to the warehouse.\n- **`verificationStatus`** records whether the AI verification passed.\n- Missing PO, back\u2011orders, and loaner approvals are all reflected in the status or flagged in the Action Center (p.3).\n- The lifecycle ends once the order is marked *\u201cCompleted\u201d* and analytics have processed the revenue (p.14).\n\nIf you need a deeper dive into any particular stage or how the status is updated programmatically, let me know!",
+      "must_contain": [
+        "DRAFT",
+        "SUBMITTED",
+        "inQad",
+        "inCsFax"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: DRAFT, SUBMITTED, inQad, inCsFax"
+    },
+    {
+      "case_id": "Q8",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "What counts toward revenue reporting?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.5]\n[Advita DOCs.pdf p.6]\n[Advita DOCs.pdf p.14]\n[Advita DOCs.pdf p.8]",
+      "answer": "Revenue is only counted from orders that actually generate income.  \nAccording to the document, **only\u202fBILL\u2011ONLY and\u202fBILL\u2011RESTOCK** orders are included in revenue reporting\u2014orders marked as RESTOCK\u2011ONLY are excluded because no money changes hands.  \n\n*See Advita\u202fDOCs.pdf, p.\u202f5 (Module: Revenue) and p.\u202f14 (POST\u202f/ebi/updateOrder \u2013 \u201cRevenue counted (BILL\u2011ONLY +\u202fBILL\u2011RESTOCK only)\u201d).*",
+      "must_contain": [
+        "BILL-ONLY",
+        "BILL-RESTOCK",
+        "RESTOCK-ONLY"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: BILL-ONLY, BILL-RESTOCK, RESTOCK-ONLY"
+    },
+    {
+      "case_id": "Q9",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "numeric_status_code_confusion",
+      "question": "What happens after a physical inventory audit finds a mismatch?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.11]\n[Advita DOCs.pdf p.14]\n[Advita DOCs.pdf p.12]\n[Advita DOCs.pdf p.4]",
+      "answer": "After a physical inventory audit discovers a mismatch, the system records a **Discrepancy** for the missing or excess item(s).  \n\n* **Missing items** trigger an automatic creation of a **Transfer** order to move the needed stock from one agency or rep to the one that reported the gap\u3010Advita DOCs.pdf p.11\u3011\u3010Advita DOCs.pdf p.12\u3011.  \n* If the discrepancy is large, a commission deduction is applied (cost\u202f\u00d7\u202f1.4)\u3010Advita DOCs.pdf p.11\u3011.  \n\nThus, a mismatch results in a discrepancy record and, for shortages, an auto\u2011generated transfer to restore inventory balance.",
+      "must_contain": [
+        "transfer",
+        "excess",
+        "1.4"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: transfer, excess, 1.4"
+    },
+    {
+      "case_id": "Q10",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "How are restock max levels set and used?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.10]\n[Advita DOCs.pdf p.4]\n[Advita DOCs.pdf p.14]\n[Advita DOCs.pdf p.3]",
+      "answer": "Restock\u2011max levels are **configured per item and per agency** and act as a hard ceiling for how many units of a given item an agency may hold.\n\n**How they are set**  \n* Managers upload the limits into Cimplicity either by a manual Excel file or by syncing from a SharePoint list.  \n  * Excel upload \u2013 POST `/demandPlanning/load/max`  \n  * SharePoint sync \u2013 GET `/demandPlanning/load/max` (p.4)  \n  * Each record contains `itemNumber`, `agencyCode` and the `max` value (p.10).\n\n**How they are used**  \nWhen a sales rep requests a restock, the system performs the following steps (p.10):\n\n1. Looks up the restock\u2011max for that `itemNumber` and `agencyCode`.  \n2. Checks the current inventory for that item from EBI/SAP.  \n3. If `currentInventory + requestedQuantity < max` the request is approved.  \n4. If the sum would exceed `max`, the request is rejected and the rep is advised to move inventory within the agency instead.\n\nThese limits also influence other processes such as inventory transfer approvals and back\u2011order handling, ensuring no agency holds more than the approved maximum.",
+      "must_contain": [
+        "itemNumber",
+        "agencyCode",
+        "max",
+        "/demandPlanning/load/max"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: itemNumber, agencyCode, max, /demandPlanning/load/max"
+    },
+    {
+      "case_id": "Q11",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "What sections appear in the Action Center and what does each show?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.13]\n[advita FE.pdf p.3]\n[advita FE.pdf p.7]\n[Advita DOCs.pdf p.5]",
+      "answer": "**Action Center Sections**\n\n| Section | What it shows |\n|---------|---------------|\n| **Needs Billing** | Surgeries that have taken place but have not yet been billed. (p.5) |\n| **Missing PO** | Orders where the hospital has not supplied a purchase\u2011order number (purchaseOrderNumber\u202f=\u202fnull). (p.13) |\n| **Backorders** | Items that are out of stock and awaiting shipment (SAP back\u2011order data). (p.13) |\n| **Restocks** | Shipping items that are pending restock shipments. (p.13) |\n| **Urgent Surgeries** | Past\u2011dated surgeries that still have not been billed. (p.13) |\n| **Stickersheet Inbox** | Stickersheets that reps have uploaded and are waiting to be processed. (p.5) |\n\nThese sections constitute the daily dashboard (\u201cCommand HQ\u201d) that surfaces all urgent items for reps and managers.",
+      "must_contain": [
+        "Needs Billing",
+        "Missing PO",
+        "Backorders",
+        "Restocks",
+        "Stickersheet Inbox"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: Needs Billing, Missing PO, Backorders, Restocks, Stickersheet Inbox"
+    },
+    {
+      "case_id": "Q12",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "Does `GET /ebi/locations` return loaner locations?",
+      "required_version": null,
+      "context": "[Advita DOCs.pdf p.9]\n[Advita DOCs.pdf p.14]\n[Advita DOCs.pdf p.12]\n[Cim Authentication.pdf p.2]",
+      "answer": "No. According to the documentation for the EBI module, the **`GET /ebi/locations`** endpoint returns all locations *excluding* those whose code ends with \u201c\u2011L\u201d (which are the loaner locations) **by default**.  \n\n*Source: Advita DOCs.pdf, page\u202f12*",
+      "must_contain": [
+        "No",
+        "-L"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: No, -L"
+    },
+    {
+      "case_id": "Q13",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "What are the entry point flows for native versus web?",
+      "required_version": null,
+      "context": "[advita FE.pdf p.11]\n[advita FE.pdf p.6]\n[advita FE.pdf p.1]\n[Cim Authentication.pdf p.4]",
+      "answer": "**Native (iOS / Android)**  \n* The app starts from **`index.js`** (advita\u202fFE.pdf\u202fp.\u202f1).  \n  * This file is the single entry point that React\u2011Native uses for both iOS and Android.  \n  * From there the platform\u2011specific native build systems (Xcode for iOS, Gradle for Android) pick up the code, compile it, and launch the React\u2011Native runtime.  \n\n**Web**  \n* The web build begins with **`index.html`** (advita\u202fFE.pdf\u202fp.\u202f11).  \n  * `index.html` supplies the `<div id=\"root\">` into which the app will mount.  \n* `index.web.js` is then loaded.  \n  * It mounts the React application to the DOM root and bootstraps the web\u2011specific services (RootViewController.web.tsx).  \n* `RootViewController.web.tsx` initializes any web\u2011only utilities.  \n* `Choreograph.web.tsx` sets up the routing configuration (via React Router 4), and the Navigation component directs the user to the appropriate web pages (under `web/pages/*` or `modules/*`).  \n\nSo, **native** uses a single `index.js` that hooks into React\u2011Native and the native build tools, while **web** follows an `index.html \u2192 index.web.js \u2192 RootViewController.web.tsx \u2192 Choreograph.web.tsx \u2192 page navigation` chain.",
+      "must_contain": [
+        "RootViewController",
+        "Choreograph",
+        "web"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: RootViewController, Choreograph, web"
+    },
+    {
+      "case_id": "Q14",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "partial_multihop_context_truncation",
+      "question": "What are the steps to add a new screen?",
+      "required_version": null,
+      "context": "[advita FE.pdf p.19]\n[Advita DOCs.pdf p.14]\n[advita FE.pdf p.12]\n[advita FE.pdf p.15]",
+      "answer": "**Steps to add a new screen**\n\n1. Create a folder in `modules/[feature]/screens/`.  \n2. Add the screen component file, e.g., `MyScreen.tsx`.  \n3. Register the route in `choreograph/AppScreens.ts`.  \n4. Add the navigation type in `choreograph/AppScreenProps.ts`.  \n\n(Reference: *advita\u202fFE.pdf*, page\u202f19)",
+      "must_contain": [
+        "AppScreens",
+        "AppScreenProps"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: AppScreens, AppScreenProps"
+    },
+    {
+      "case_id": "Q15",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "How does platform-specific file resolution work?",
+      "required_version": null,
+      "context": "[advita FE.pdf p.7]\n[Advita DOCs.pdf p.14]\n[advita FE.pdf p.17]\n[advita FE.pdf p.6]",
+      "answer": "**Platform\u2011specific file resolution**  \nThe project resolves imports by looking for a file that matches the current platform first, then falls back to a shared (platform\u2011agnostic) file.  \nThe resolution follows the rules shown in *advita\u202fFE.pdf* (p.\u202f17):\n\n| Priority | File name pattern | Example | When it is chosen |\n|----------|-------------------|---------|--------------------|\n| **1 \u2013 Exact platform match** | `Component.web.tsx`, `Component.ios.tsx`, `Component.android.tsx` | `Button.ios.tsx` | If the import is made while building for that platform, the file with the matching extension is used. |\n| **2 \u2013 Shared (common) file** | `Component.tsx`, `Component.ts`, `Component.js`, `Component.jsx` | `Button.tsx` | If no platform\u2011specific file exists for the current platform, the shared file is used. |\n\nThe extension resolution order (used when several extensions are possible) is:\n\n1. `.tsx`\n2. `.ts`\n3. `.js`\n4. `.jsx`\n\nThe overall priority order for choosing which platform\u2019s file to load is:\n\n1. **Shared (iOS\u202f+\u202fAndroid)** \u2013 common implementation\n2. **Web\u2011specific** \u2013 files with `.web.tsx` (rarely used on native)\n3. **iOS\u2011specific** \u2013 files with `.ios.tsx` (rarely used on web/Android)\n4. **Android\u2011specific** \u2013 files with `.android.tsx` (rarely used on web/iOS)\n\nSo, when you import `Button` in a React Native or web bundle:\n\n- If a `Button.ios.tsx` exists and you\u2019re on iOS, it\u2019s used.\n- If you\u2019re on Android and `Button.android.tsx` exists, it\u2019s used.\n- If you\u2019re on web and `Button.web.tsx` exists, it\u2019s used.\n- If none of those are present, the shared `Button.tsx` is loaded.\n\nThis convention ensures that each platform can provide its own UI or logic while sharing a common core implementation.",
+      "must_contain": [
+        ".web.tsx",
+        "priority"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: .web.tsx, priority"
+    },
+    {
+      "case_id": "Q16",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "Which services live in the services layer, and how does a screen access one?",
+      "required_version": null,
+      "context": "[advita FE.pdf p.4]\n[advita FE.pdf p.3]\n[advita FE.pdf p.19]\n[advita FE.pdf p.18]",
+      "answer": "**Which services live in the *services* layer?**  \nAll of the cross\u2011app services that provide shared business logic live under the `services/` directory (see\u202fp.\u202f4).  The key ones listed are:  \n\n| Service | Purpose (file names) | Folder in repo |\n|---------|----------------------|----------------|\n| **Authentication** \u2013 login, token refresh, user session | `authentication/` | `services/authentication/` |\n| **Bluetooth** \u2013 BLE device communication | `bluetooth/` | `services/bluetooth/` |\n| **Code Scanner** \u2013 QR/barcode scanning via Vision Camera | `code\u2011scanner/` | `services/code-scanner/` |\n| **Extraction** \u2013 ML\u2011based document extraction using TensorFlow\u202fLite | `extraction/` | `services/extraction/` |\n| **Keychain** \u2013 secure storage of credentials | `keychain/` | `services/keychain/` |\n| **RehydrateService** \u2013 state rehydration on app start | `RehydrateService.ts` | `services/` |\n\n*(See \u201cservices/\u202fp\u2014\u2014 AppServices.tsx \u2026 RehydrateService.ts authentication/ \u2026\u201d in the PDF \u2013 p.\u202f4.)*\n\n---\n\n**How a screen accesses a service**\n\n1. **Context provision** \u2013 The file `ServicesContext.tsx` (p.\u202f4) creates a React Context that holds instances of each service.  \n2. **Using the context** \u2013 In any screen component you import that context and call `useContext`:\n\n   ```tsx\n   import { useContext } from 'react';\n   import { ServicesContext } from 'services/ServicesContext';\n\n   const MyScreen = () => {\n     const services = useContext(ServicesContext);\n\n     // Use any service, e.g. authentication\n     const { login, logout } = services.authentication;\n   };\n   ```\n\n3. **Calling the service** \u2013 Once you have the service object you can invoke its methods (e.g. `services.authentication.login(...)`, `services.bluetooth.startScan()`, etc.).\n\nThus, screens obtain services via the `ServicesContext` that injects the entire services layer, keeping the implementation details (the specific service files) hidden from UI components.",
+      "must_contain": [
+        "Context",
+        "Services"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: Context, Services"
+    },
+    {
+      "case_id": "Q17",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "Which npm scripts run the web app, and what does each do?",
+      "required_version": null,
+      "context": "[advita FE.pdf p.16]\n[advita FE.pdf p.21]\n[advita FE.pdf p.10]\n[advita FE.pdf p.17]",
+      "answer": "**NPM scripts that start or build the web side of the application**\n\n| Script | File & Page | What it does |\n|--------|-------------|--------------|\n| `npm run web:dev` | *advita\u202fFE.pdf* \u2013 p.16 (under \u201cDevelopment Scripts\u201d) and p.21 (used to fix \u201cWeb build not updating\u201d issues) | Starts the Webpack\u202fdev\u2011server that hosts the web app in development mode. The server includes hot\u2011module\u2011replacement (HMR) so changes to the source immediately appear in the browser. |\n| `npm run web:prod` | *advita\u202fFE.pdf* \u2013 p.16 (under \u201cDevelopment Scripts\u201d) | Starts a Webpack\u2011built production server. It builds the final web bundle (minified, hashed assets) and then serves those files, typically for preview or staging purposes. |\n| `npm run web:dist` | *advita\u202fFE.pdf* \u2013 p.16 (under \u201cBuild Scripts\u201d) | Generates a production\u2011ready static distribution of the web app. The resulting files are placed in the `dist` folder and are ready to be deployed to a web server or CDN. |\n\nThese three scripts are the only ones in the project that directly launch or compile the web application. All other scripts either target mobile platforms (iOS/Android) or perform ancillary tasks (cleaning, testing, linting, etc.).",
+      "must_contain": [
+        "web:dev",
+        "web:prod",
+        "web:dist"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: web:dev, web:prod, web:dist"
+    },
+    {
+      "case_id": "Q18",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "What are the three ways a request can authenticate?",
+      "required_version": null,
+      "context": "[Cim Authentication.pdf p.7]\n[Cim Authentication.pdf p.5]\n[Cim Authentication.pdf p.3]\n[Cim Authentication.pdf p.10]",
+      "answer": "The documentation lists **three distinct ways a request can be authenticated**:\n\n| # | Authentication method | How it is used | Key file/line |\n|---|------------------------|----------------|---------------|\n| 1 | **Bearer JWT token** \u2013 an access token issued by Azure\u202fAD | Sent in the `Authorization: Bearer <access_token>` header on every protected API call. | *Cim Authentication.pdf*\u00a0p.\u202f5 (3.3\u202fAttaching Tokens to Requests) |\n| 2 | **API key** | Sent in the request header (handled by `validateApikey`). The key is hashed, looked\u2011up, checked for `isActive` and expiry, and stamped with `lastUsedAt`. | *Cim Authentication.pdf*\u00a0p.\u202f7 (validateApikey in `./src/modules/apikeys/controller.ts`) |\n| 3 | **Impersonation header** \u2013 an optional override that lets an authenticated user act as another user | Added as `impersonate: <target\u2011user\u2011email>`. The backend will only allow this if the caller\u2019s role has the `user.impersonate` permission, and logs both the caller and target. | *Cim Authentication.pdf*\u00a0p.\u202f3 (3.3\u202fAttaching Tokens to Requests \u2013 optional impersonate header) |\n\nSo a request can authenticate either with a JWT Bearer token, with an API key, or by using the impersonation header (after a primary authentication has already been established).",
+      "must_contain": [
+        "requireAuthentication",
+        "requireApiKey",
+        "cim_"
+      ],
+      "pass_rate": 0.0,
+      "ground_truth": "Must contain: requireAuthentication, requireApiKey, cim_"
+    },
+    {
+      "case_id": "Q19",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "Walk through `verifyToken`.",
+      "required_version": null,
+      "context": "[Cim Authentication.pdf p.5]\n[Advita DOCs.pdf p.11]\n[Cim Authentication.pdf p.6]\n[Advita DOCs.pdf p.12]",
+      "answer": "**Walk\u2011through of `verifyToken` (./src/middleware/authentication.ts)**  \n*(All the information comes from\u202f**Cim Authentication.pdf**\u202fpages\u202f5\u20116.)*\n\n| Step | What the code does | Key notes / config |\n|------|-------------------|-------------------|\n| 1. **Cache lookup** | `getCachedJwtPayload(token)` (in *jwtCache.ts*) is called first. It checks Redis for a SHA\u2011256\u2011hashed key derived from the raw JWT. If a cached payload exists, it\u2019s returned immediately, avoiding a network round\u2011trip. The key\u2019s TTL is aligned with the JWT\u2019s `exp` claim (but never exceeds 60\u202fmin). | \u201cCache lookup \u2014 getCachedJwtPayload(token) \u2026 Redis\u2011backed, SHA\u2011256\u2011hashed key, TTL aligned to JWT exp (capped at 60\u202fmin)\u201d \u2013 *Cim Authentication.pdf p.6* |\n| 2. **JWKS verification (if cache miss)** | When the cache misses, the token is verified with `jose.jwtVerify`. The verification uses:<br>\u2022 `audience` = `config.oidc.jwtAudience`<br>\u2022 `issuer` = `config.oidc.jwtIssuer`<br>\u2022 JWKS URL from `config.oidc.jwksUrl` | \u201cJWKS verification \u2014 If cache miss \u2026 verified against config.oidc.jwksUrl \u2026 with audience = config.oidc.jwtAudience and issuer = config.oidc.jwtIssuer\u201d \u2013 *Cim Authentication.pdf p.6* |\n| 3. **Skip security checks in dev** | If `config.oidc.disableSecurityCheck` is set to `true` (only allowed in dev), the signature, issuer, and audience checks are bypassed. The payload is simply decoded and returned. In production this flag must be `false`. | \u201cIf config.oidc.disableSecurityCheck is true (dev only), signature/issuer/audience checks are skipped and the payload is decoded directly. This must be false in production.\u201d \u2013 *Cim Authentication.pdf p.6* |\n| 4. **Cache store** | After successful verification, the decoded payload is written back to Redis so that subsequent calls can hit the cache. | \u201cVerified payload is written back to Redis.\u201d \u2013 *Cim Authentication.pdf p.6* |\n| 5. **Just\u2011in\u2011Time (JIT) user provisioning** | The code looks up the user by the email claim (which may appear as `email`, `unique_name`, or `preferred_username`). If no matching user is found, `createNewUser` is invoked inside a database transaction:<br>1. **Agency** \u2013 Uses `config.defaultAgencyId` if defined; otherwise it creates an agency named \u201c\\<FirstName> \\<LastName> Agency\u201d.<br>2. **Role** \u2013 Uses `config.defaultRoleId` if defined; otherwise it creates a \u201cSales Rep\u201d role at level\u202f6 and seeds it with a curated permission list (`resource.*.*` for owned resources).<br>3. **User** \u2013 Creates the user record with the resolved `agencyId` and `roleId`. | \u201cJust-in-Time User Provisioning \u2026 createNewUser ( ./src/middleware/authentication.ts:21 ) \u2026 Agency, Role, User\u201d \u2013 *Cim Authentication.pdf p.6* |\n| 6. **Return** | The middleware finally attaches the verified payload (and any newly created user record) to the request context and passes control to the next handler. |  |\n\n**Summary**\n\n1. Check Redis cache \u2192 return if hit.  \n2. If miss, verify JWT against the JWKS URL using configured audience/issuer (or skip checks in dev).  \n3. Cache the verified payload.  \n4. If the user is unknown, provision an agency, role, and user record in a single transaction.  \n5. Attach the payload/user to the request and continue.\n\nThis is the full logic of the `verifyToken` middleware as described in the provided documentation.",
+      "must_contain": [
+        "cache",
+        "jwks",
+        "disableSecurityCheck"
+      ],
+      "pass_rate": 1.0,
+      "ground_truth": "Must contain: cache, jwks, disableSecurityCheck"
+    },
+    {
+      "case_id": "Q20",
+      "trace_id": null,
+      "is_regression": false,
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "Do API keys go through the permission system?",
+      "required_version": null,
+      "context": "[Cim Authentication.pdf p.7]\n[Cim Authentication.pdf p.9]\n[Cim Authentication.pdf p.4]\n[Cim Authentication.pdf p.2]",
+      "answer": "No.  \nAPI\u2011key requests are bound to a synthetic system user that always reports full access (`hasPermission: async () => true`). The documentation explicitly states that API keys bypass the normal permission checks and act as a super\u2011user.  \n\n*Source: Cim Authentication.pdf p.7*",
+      "must_contain": [
+        "bypass",
+        "superuser"
+      ],
+      "pass_rate": 0.5,
+      "ground_truth": "Must contain: bypass, superuser"
+    },
+    {
+      "case_id": "Q21",
       "trace_id": "tr_042",
       "is_regression": true,
       "mode": "v2_signature_returned_for_v3_query",
@@ -9,271 +351,51 @@
       "required_version": "v3",
       "context": "[Advita FE.pdf p.3]\ngetBackorders(agencyId)\nFetches backorder records for the specified agency.",
       "answer": "`getBackorders` accepts single agencyId parameter: getBackorders(agencyId) [Advita FE.pdf p.3].",
-      "ground_truth": "In v3 SDK, getBackorders requires an options object: getBackorders({ agencyId, includeDrafts }). Passing a positional parameter is the deprecated v2 syntax."
+      "ground_truth": "In SDK v3, getBackorders requires an options object: getBackorders({ agencyId, includeDrafts }). Recommending positional parameter is legacy v2."
     },
     {
-      "case_id": "case_02",
-      "trace_id": "tr_001",
-      "is_regression": true,
-      "mode": "v2_signature_returned_for_v3_query",
-      "question": "How do I initialize the Cimplicity AuthClient in v3 SDK?",
-      "required_version": "v3",
-      "context": "[Cim Authentication v3.pdf p.5]\nAuthClient initialization (v3.0+):\nconst client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });\nAPI Key options removed.",
-      "answer": "To initialize the AuthClient in v3 SDK, use `const client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });` [Cim Authentication v3.pdf p.5]. Do not pass apiKey as it was removed in v3.",
-      "ground_truth": "Use tokenProvider and tenantId in SDK v3. apiKey configuration is removed."
-    },
-    {
-      "case_id": "case_03",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "v2_signature_returned_for_v3_query",
-      "question": "What parameters does `requireApiKey()` accept in v3?",
-      "required_version": "v3",
-      "context": "[Cim Authentication.pdf p.4]\nrequireApiKey(req, res, next) middleware checks header 'x-api-key'.",
-      "answer": "The `requireApiKey` middleware accepts `(req, res, next)` positional parameters [Cim Authentication.pdf p.4].",
-      "ground_truth": "In v3, requireApiKey is deprecated and replaced by authenticateBearer(). In v2 it took (req, res, next)."
-    },
-    {
-      "case_id": "case_04",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "v2_signature_returned_for_v3_query",
-      "question": "How do I register an async event listener in SDK v3?",
-      "required_version": "v3",
-      "context": "[Advita SDK v3.pdf p.7]\nIn SDK v3, event listeners are registered via `sdk.subscribe(eventName, async handler)` returning an unsubscribe handle.",
-      "answer": "In SDK v3, register event listeners using `sdk.subscribe(eventName, asyncHandler)` which returns an unsubscribe handle [Advita SDK v3.pdf p.7].",
-      "ground_truth": "In SDK v3, use sdk.subscribe(eventName, asyncHandler)."
-    },
-    {
-      "case_id": "case_05",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "v2_signature_returned_for_v3_query",
-      "question": "How do I query paginated items in v3 API?",
-      "required_version": "v3",
-      "context": "[Advita DOCs.pdf p.9]\nQuery items using ?offset=0&limit=50 for pagination.",
-      "answer": "To query paginated items, pass `?offset=0&limit=50` to the endpoint [Advita DOCs.pdf p.9].",
-      "ground_truth": "v3 uses cursor-based pagination (?cursor=abc&pageSize=50). Offset pagination is v2."
-    },
-    {
-      "case_id": "case_06",
+      "case_id": "Q22",
       "trace_id": "tr_050",
       "is_regression": true,
       "mode": "omitted_prerequisite_header_or_import",
       "question": "How do I make an HTTP request to /api/v1/impersonate?",
       "required_version": null,
       "context": "[Cim Authentication.pdf p.3]\nPOST /api/v1/impersonate body: { 'userId': '123' }",
-      "answer": "Send POST to /api/v1/impersonate with target userId: `{'userId': 'target_user_id'}` [Cim Authentication.pdf p.3].",
-      "ground_truth": "POST to /api/v1/impersonate with JSON body {'userId': 'target_user_id'}. Must include prerequisite header Authorization: Bearer <admin_token>."
+      "answer": "Send POST to /api/v1/impersonate with target userId: {'userId': 'target_user_id'} [Cim Authentication.pdf p.3].",
+      "ground_truth": "POST to /api/v1/impersonate with JSON body. Must include prerequisite Authorization: Bearer <admin_token> header."
     },
     {
-      "case_id": "case_07",
-      "trace_id": "tr_004",
-      "is_regression": true,
-      "mode": "omitted_prerequisite_header_or_import",
-      "question": "How do I authenticate calls to /api/revenue analytics?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.5]\nGET /api/revenue returns monthly revenue stats. Requires `Authorization: Bearer <jwt>` and `x-agency-id` header.",
-      "answer": "Authenticate by providing `Authorization: Bearer <jwt>` and `x-agency-id: <id>` in the request headers when calling GET /api/revenue [Advita DOCs.pdf p.5].",
-      "ground_truth": "Include Authorization: Bearer <jwt> and x-agency-id header."
-    },
-    {
-      "case_id": "case_08",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "omitted_prerequisite_header_or_import",
-      "question": "What headers are needed to submit stickersheet verification to /orders/verification?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.12]\nPOST /orders/verification with orderId and fileId to verify stickersheet serials.",
-      "answer": "Just send a POST to /orders/verification with `{'orderId': '123', 'fileId': '456'}` [Advita DOCs.pdf p.12].",
-      "ground_truth": "Requires Content-Type: application/json and x-api-key headers along with orderId and fileId."
-    },
-    {
-      "case_id": "case_09",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "omitted_prerequisite_header_or_import",
-      "question": "How do I import and initialize the Cimplicity SDK in Node.js?",
-      "required_version": null,
-      "context": "[advita FE.pdf p.1]\nInstall with npm install @cimplicity/sdk. Import: `import { CimClient } from '@cimplicity/sdk';`. Initialize: `const client = new CimClient({ tenantId: process.env.TENANT_ID });`.",
-      "answer": "Import CimClient with `import { CimClient } from '@cimplicity/sdk';` and initialize using `const client = new CimClient({ tenantId: process.env.TENANT_ID });` [advita FE.pdf p.1].",
-      "ground_truth": "import { CimClient } from '@cimplicity/sdk' and new CimClient({ tenantId })."
-    },
-    {
-      "case_id": "case_10",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "omitted_prerequisite_header_or_import",
-      "question": "How do I call the QAD ERP sync endpoint /ebi/updateOrder?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.14]\nPOST /ebi/updateOrder with body: { orderId, inQad }.",
-      "answer": "Make a POST call to /ebi/updateOrder with body `{'orderId': 'ord_1', 'inQad': true}` [Advita DOCs.pdf p.14].",
-      "ground_truth": "Must include x-erp-signature HMAC header and Content-Type: application/json."
-    },
-    {
-      "case_id": "case_11",
+      "case_id": "Q23",
       "trace_id": "tr_048",
       "is_regression": true,
       "mode": "wildcard_and_special_char_token_dropped",
       "question": "What does wildcard * mean in permission strings?",
       "required_version": null,
-      "context": "[Cim Authentication.pdf p.7]\nPermission format: `service:resource:action`. A wildcard `*` matches all actions or resources (e.g. `orders:*` allows any order action).",
-      "answer": "Permission strings format is service:resource:action where wildcard `*` matches all resources or actions, such as `orders:*` for full order permissions [Cim Authentication.pdf p.7].",
+      "context": "[Cim Authentication.pdf p.7]\nPermission format: service:resource:action. Wildcard * matches all resources or actions.",
+      "answer": "Permission strings format is service:resource:action where wildcard * matches all resources or actions [Cim Authentication.pdf p.7].",
       "ground_truth": "Wildcard * matches any action or resource within the permission namespace."
     },
     {
-      "case_id": "case_12",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "wildcard_and_special_char_token_dropped",
-      "question": "What does location suffix -L mean for ShippingItems?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.9]\nIf the shipping item location ends in `-L`, it represents LOANER stock requiring manual approval (`reviewReason = 'LOANER'`). Normal consignment has no `-L`.",
-      "answer": "If the location ends with `-L`, it designates loaner stock. It sets `reviewReason = 'LOANER'` and `status = PENDING_APPROVAL`, requiring human approval [Advita DOCs.pdf p.9].",
-      "ground_truth": "The -L suffix marks loaner stock, setting reviewReason to LOANER and requiring manual approval."
-    },
-    {
-      "case_id": "case_13",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "wildcard_and_special_char_token_dropped",
-      "question": "How does the search query syntax handle prefix matching with BILL-*?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.6]\nPrefix wildcard queries like `BILL-*` match both `BILL-RESTOCK` and `BILL-ONLY` order types in the order search index.",
-      "answer": "The query searches for BILL order types [Advita DOCs.pdf p.6].",
-      "ground_truth": "BILL-* uses wildcard matching to return both BILL-RESTOCK and BILL-ONLY order types."
-    },
-    {
-      "case_id": "case_14",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "wildcard_and_special_char_token_dropped",
-      "question": "How are query parameters with brackets like `filter[status]` parsed?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.15]\nNested query filters use bracket notation `filter[status]=SUBMITTED&filter[agencyId]=AG-9`.",
-      "answer": "Filters use bracket notation `filter[status]=SUBMITTED` to filter orders by status [Advita DOCs.pdf p.15].",
-      "ground_truth": "Bracket notation filter[field]=value enables nested filtering."
-    },
-    {
-      "case_id": "case_15",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "wildcard_and_special_char_token_dropped",
-      "question": "What does the `@` prefix in `@cimplicity/sdk` package name indicate?",
-      "required_version": null,
-      "context": "[advita FE.pdf p.1]\nThe `@` prefix indicates an npm scoped package under the Cimplicity corporate registry scope `@cimplicity`.",
-      "answer": "It is just a standard package name [advita FE.pdf p.1].",
-      "ground_truth": "The @ prefix denotes an npm scoped package under the @cimplicity organization scope."
-    },
-    {
-      "case_id": "case_16",
+      "case_id": "Q24",
       "trace_id": "tr_067",
       "is_regression": true,
       "mode": "numeric_status_code_confusion",
       "question": "When does the auth server return 403 versus 401?",
       "required_version": null,
-      "context": "[Cim Authentication.pdf p.8]\nHTTP 401 Unauthorized is returned when authentication is missing or token is invalid/expired. HTTP 403 Forbidden is returned when the user is authenticated but lacks the required permissions/roles.",
-      "answer": "HTTP 401 is returned when authentication token is missing or expired. HTTP 403 is returned when the user is authenticated but lacks sufficient permission for the resource [Cim Authentication.pdf p.8].",
-      "ground_truth": "401 = unauthenticated (missing/invalid token); 403 = authenticated but unauthorized (insufficient permissions)."
+      "context": "[Cim Authentication.pdf p.8]\nHTTP 401 is returned when token is missing/expired. HTTP 403 is returned when user has insufficient permissions.",
+      "answer": "HTTP 401 is returned when authentication token is missing or expired. HTTP 403 is returned when user lacks permission [Cim Authentication.pdf p.8].",
+      "ground_truth": "401 = unauthenticated; 403 = authenticated but unauthorized."
     },
     {
-      "case_id": "case_17",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "numeric_status_code_confusion",
-      "question": "What status code is returned when a stickersheet upload file is missing?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.12]\nIf the upload payload lacks the required file or fileId, the endpoint returns 400 Bad Request. If the fileId does not exist, it returns 404 Not Found.",
-      "answer": "It returns HTTP 500 Internal Server Error when the file is missing [Advita DOCs.pdf p.12].",
-      "ground_truth": "Returns 400 Bad Request for missing file payload, or 404 Not Found if fileId is absent."
-    },
-    {
-      "case_id": "case_18",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "numeric_status_code_confusion",
-      "question": "What status code is returned upon successful creation of an order via POST /api/v2/orders?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.7]\nSuccessful order creation via POST /api/v2/orders returns HTTP 201 Created with the created order entity and Location header.",
-      "answer": "Successful order creation returns HTTP 201 Created [Advita DOCs.pdf p.7].",
-      "ground_truth": "HTTP 201 Created is returned upon successful creation."
-    },
-    {
-      "case_id": "case_19",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "numeric_status_code_confusion",
-      "question": "What HTTP code indicates rate limiting when calling /api/revenue?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.5]\nRate limited requests exceed 100 req/min and return HTTP 429 Too Many Requests with a Retry-After header.",
-      "answer": "Rate limiting returns HTTP 404 Not Found [Advita DOCs.pdf p.5].",
-      "ground_truth": "HTTP 429 Too Many Requests with Retry-After header."
-    },
-    {
-      "case_id": "case_20",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "numeric_status_code_confusion",
-      "question": "What status code is returned if an inventory reconciliation calculation fails validation?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.10]\nIf quantity exceeds restockMax during reconciliation, the API returns 422 Unprocessable Entity with validation details.",
-      "answer": "Returns HTTP 422 Unprocessable Entity with validation error details in the response body [Advita DOCs.pdf p.10].",
-      "ground_truth": "HTTP 422 Unprocessable Entity."
-    },
-    {
-      "case_id": "case_21",
-      "trace_id": "tr_097",
+      "case_id": "Q25",
+      "trace_id": "tr_001",
       "is_regression": true,
-      "mode": "partial_multihop_context_truncation",
-      "question": "What are the two ERP systems and which module talks to each?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.4]\nAdvita integrates with two ERP systems: SAP and QAD. The EBI module pulls inventory and backorder analytics from SAP BI/Webi. Order creation and PO updates sync directly to QAD ERP via the sync module.",
-      "answer": "Advita integrates with SAP and QAD. The EBI module pulls inventory analytics from SAP, while orders and PO updates sync to QAD ERP [Advita DOCs.pdf p.4].",
-      "ground_truth": "SAP is queried by EBI for inventory/backorders; QAD is synced with for order creation and PO updates."
-    },
-    {
-      "case_id": "case_22",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "partial_multihop_context_truncation",
-      "question": "Walk through the complete order lifecycle from draft to warehouse fax.",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.8]\nOrder lifecycle: DRAFT -> SUBMITTED -> ShippingItems auto-approved or flagged -> APPROVED / PENDING_APPROVAL -> inQad=true (synced to QAD ERP) -> inCsFax=true (sent to warehouse fax system).",
-      "answer": "The order goes from DRAFT to SUBMITTED [Advita DOCs.pdf p.8].",
-      "ground_truth": "DRAFT -> SUBMITTED -> auto-approved/flagged -> APPROVED/PENDING_APPROVAL -> inQad=true -> inCsFax=true."
-    },
-    {
-      "case_id": "case_23",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "partial_multihop_context_truncation",
-      "question": "How does a stickersheet move from physical surgery to verified billing in Cimplicity?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.2, p.12]\n1. Physical label peeled and attached to patient record.\n2. Rep takes photo and uploads to Azure Blob Storage.\n3. Cloud Vision OCR extracts serial numbers with blue/red tags.\n4. AI (Gemini) compares serials against billing items.\n5. Status updated to COMPLETED or discrepancy logged.",
-      "answer": "1. Physical label affixed to patient record. 2. Rep photographs and uploads to Azure Blob Storage. 3. Vision OCR extracts serial numbers. 4. Gemini compares extracted serials to billing items. 5. Marked COMPLETED or discrepancy logged [Advita DOCs.pdf p.2, p.12].",
-      "ground_truth": "Multi-hop lifecycle: surgery record -> photo upload to Azure Blob -> Vision OCR -> Gemini AI verification -> COMPLETED or discrepancy."
-    },
-    {
-      "case_id": "case_24",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "partial_multihop_context_truncation",
-      "question": "What are all five order types and what does each do?",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.7]\nOrder Types:\n1. BILL-RESTOCK: bills hospital AND ships restock to rep.\n2. BILL-ONLY: bills hospital only, no restocking.\n3. RESTOCK-ONLY: ships restock to rep, no invoice.\n4. INSTRUMENT-QUOTE: generates price quote without fulfilment.\n5. DIRECT-SALE: direct purchase bypassing surgical flow.",
-      "answer": "The order types are BILL-RESTOCK (bills hospital and restocks rep) and BILL-ONLY (bills hospital only) [Advita DOCs.pdf p.7].",
-      "ground_truth": "All five types must be named: BILL-RESTOCK, BILL-ONLY, RESTOCK-ONLY, INSTRUMENT-QUOTE, DIRECT-SALE."
-    },
-    {
-      "case_id": "case_25",
-      "trace_id": null,
-      "is_regression": false,
-      "mode": "partial_multihop_context_truncation",
-      "question": "Explain the difference between BillingItem and ShippingItem in data model and approval.",
-      "required_version": null,
-      "context": "[Advita DOCs.pdf p.6]\nBillingItem represents items consumed in surgery; has pricing, links to stickersheet via fileId, no approval flow. ShippingItem represents items to be restocked/shipped; has no pricing, requires approval (status, reviewReason, approvalReason) and logs a calculationTrail. Both link to an Item record.",
-      "answer": "BillingItem is consumed in surgery with pricing and links to stickersheet fileId without approval flow. ShippingItem is restocked to the rep, has no pricing, requires approval flow with calculationTrail, and both reference Item [Advita DOCs.pdf p.6].",
-      "ground_truth": "BillingItem has pricing, no approval; ShippingItem has no pricing, requires approval with calculationTrail; both reference Item."
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "How do I initialize the Cimplicity AuthClient in v3 SDK?",
+      "required_version": "v3",
+      "context": "[Cim Authentication v3.pdf p.5]\nAuthClient initialization (v3.0+):\nconst client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });\nAPI Key options removed.",
+      "answer": "To initialize AuthClient in SDK v3, use `const client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });` [Cim Authentication v3.pdf p.5]. apiKey is removed.",
+      "ground_truth": "Use tokenProvider and tenantId in SDK v3. apiKey configuration is removed."
     }
   ]
 }

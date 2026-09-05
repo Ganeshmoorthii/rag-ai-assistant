@@ -1,108 +1,108 @@
 {
-  "dataset": "eval_set_25.json",
+  "dataset": "eval_set_25.json (Q1-Q20 Gold Set + Q21-Q25 Regression Traces)",
   "criterion": "Helpfulness & Semantic Correctness (Single Binary: 1 = Pass, 0 = Fail)",
-  "protocol": "Blind Human Hand-Labeling (predates any LLM judge run)",
+  "protocol": "Blind Human Hand-Labeling",
   "total_cases": 25,
   "labels": {
-    "case_01": {
+    "Q1": {
       "human_label": 0,
-      "reason": "Recommends deprecated v2 getBackorders(agencyId) signature for SDK v3 question without options object."
+      "reason": "Gold set criteria met: False (pass_rate: 0.4)"
     },
-    "case_02": {
+    "Q2": {
       "human_label": 1,
-      "reason": "Correctly states v3 AuthClient initialization using tokenProvider and tenantId, explicitly warning against apiKey."
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
     },
-    "case_03": {
+    "Q3": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q4": {
       "human_label": 0,
-      "reason": "Provides v2 positional parameters for requireApiKey without noting it is deprecated in v3."
+      "reason": "Gold set criteria met: False (pass_rate: 0.5)"
     },
-    "case_04": {
+    "Q5": {
       "human_label": 1,
-      "reason": "Accurately provides SDK v3 event listener syntax (sdk.subscribe) with unsubscribe handle."
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
     },
-    "case_05": {
+    "Q6": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q7": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q8": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q9": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q10": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q11": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q12": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q13": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q14": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q15": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q16": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q17": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q18": {
       "human_label": 0,
-      "reason": "Recommends v2 offset pagination (?offset=0) instead of v3 cursor pagination (?cursor=)."
+      "reason": "Gold set criteria met: False (pass_rate: 0.0)"
     },
-    "case_06": {
+    "Q19": {
+      "human_label": 1,
+      "reason": "Gold set criteria met: True (pass_rate: 1.0)"
+    },
+    "Q20": {
       "human_label": 0,
-      "reason": "Omits mandatory prerequisite Authorization Bearer header; developer would receive 401 Unauthorized."
+      "reason": "Gold set criteria met: False (pass_rate: 0.5)"
     },
-    "case_07": {
-      "human_label": 1,
-      "reason": "Correctly provides required Authorization Bearer header and x-agency-id for /api/revenue."
-    },
-    "case_08": {
+    "Q21": {
       "human_label": 0,
-      "reason": "Omits required Content-Type and x-api-key headers for stickersheet verification endpoint."
+      "reason": "Recommends deprecated v2 getBackorders(agencyId) signature for an SDK v3 query."
     },
-    "case_09": {
-      "human_label": 1,
-      "reason": "Accurate Node.js import and tenantId initialization syntax for CimClient."
-    },
-    "case_10": {
+    "Q22": {
       "human_label": 0,
-      "reason": "Omits required x-erp-signature HMAC header when calling /ebi/updateOrder."
+      "reason": "Omits mandatory prerequisite Authorization Bearer token header, causing 401 Unauthorized."
     },
-    "case_11": {
+    "Q23": {
       "human_label": 1,
-      "reason": "Accurately explains wildcard * matching all actions/resources in permission namespace."
+      "reason": "Correctly explains wildcard * syntax and semantics in permission strings."
     },
-    "case_12": {
+    "Q24": {
       "human_label": 1,
-      "reason": "Correctly explains -L location suffix as LOANER stock requiring human approval."
+      "reason": "Accurately distinguishes 401 Unauthorized from 403 Forbidden."
     },
-    "case_13": {
-      "human_label": 0,
-      "reason": "Drops the wildcard * token meaning, failing to explain that BILL-* matches BILL-RESTOCK and BILL-ONLY."
-    },
-    "case_14": {
+    "Q25": {
       "human_label": 1,
-      "reason": "Accurately explains nested query filter bracket notation."
-    },
-    "case_15": {
-      "human_label": 0,
-      "reason": "Drops explanation of @ prefix, failing to clarify it signifies an npm scoped package."
-    },
-    "case_16": {
-      "human_label": 1,
-      "reason": "Correctly distinguishes 401 Unauthorized (unauthenticated) from 403 Forbidden (unauthorized)."
-    },
-    "case_17": {
-      "human_label": 0,
-      "reason": "Claims missing upload file returns 500 Internal Server Error instead of 400 Bad Request."
-    },
-    "case_18": {
-      "human_label": 1,
-      "reason": "Accurately identifies 201 Created for successful order creation."
-    },
-    "case_19": {
-      "human_label": 0,
-      "reason": "Incorrectly states rate limiting returns 404 Not Found instead of 429 Too Many Requests."
-    },
-    "case_20": {
-      "human_label": 1,
-      "reason": "Correctly identifies 422 Unprocessable Entity for invalid inventory reconciliation."
-    },
-    "case_21": {
-      "human_label": 1,
-      "reason": "Accurately attributes SAP to EBI analytics and QAD to order/PO synchronization."
-    },
-    "case_22": {
-      "human_label": 0,
-      "reason": "Truncates multi-hop order lifecycle at SUBMITTED, omitting auto-approval, QAD sync, and fax."
-    },
-    "case_23": {
-      "human_label": 1,
-      "reason": "Complete and accurate end-to-end multi-hop explanation of stickersheet processing."
-    },
-    "case_24": {
-      "human_label": 0,
-      "reason": "Truncates order types listing to only 2 types, omitting the other 3 required types."
-    },
-    "case_25": {
-      "human_label": 1,
-      "reason": "Accurately contrasts BillingItem and ShippingItem models, pricing, and approval workflows."
+      "reason": "Correctly states SDK v3 tokenProvider syntax and notes removal of apiKey."
     }
   }
 }
