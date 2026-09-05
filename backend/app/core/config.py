@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     chroma_dir: str = "./data/chroma"
     upload_dir: str = "./data/uploads"
+    traces_path: str = "./data/traces.jsonl"
+    trace_logging_enabled: bool = True
 
     chunk_size: int = 1000
     chunk_overlap: int = 150
