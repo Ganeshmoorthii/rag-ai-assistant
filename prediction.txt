@@ -1,0 +1,1 @@
+Adding few-shot examples derived from the judge's disagreements on case_01 (penalizing v2 SDK signatures returned for v3 queries) and case_06 (penalizing omitted prerequisite HTTP headers) will force the judge to fail version-mismatched and unauthenticated answers across the dataset, raising overall judge-human agreement from 76.0% to above 88%.

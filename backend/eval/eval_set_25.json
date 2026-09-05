@@ -7,7 +7,7 @@
       "mode": "v2_signature_returned_for_v3_query",
       "question": "How do I call `getBackorders()` in SDK v3?",
       "required_version": "v3",
-      "context": "[Advita FE.pdf p.3]\ngetBackorders(agencyId)\nNote: In v3 SDK, getBackorders requires options object: getBackorders({ agencyId, includeDrafts }). Calling getBackorders(agencyId) is deprecated.",
+      "context": "[Advita FE.pdf p.3]\ngetBackorders(agencyId)\nFetches backorder records for the specified agency.",
       "answer": "`getBackorders` accepts single agencyId parameter: getBackorders(agencyId) [Advita FE.pdf p.3].",
       "ground_truth": "In v3 SDK, getBackorders requires an options object: getBackorders({ agencyId, includeDrafts }). Passing a positional parameter is the deprecated v2 syntax."
     },
@@ -18,7 +18,7 @@
       "mode": "v2_signature_returned_for_v3_query",
       "question": "How do I initialize the Cimplicity AuthClient in v3 SDK?",
       "required_version": "v3",
-      "context": "[Cim Authentication v2.pdf p.2]\nAuthClient initialization (v2.4):\nconst client = new AuthClient({ apiKey: 'cim_123', secret: 'abc' });\n\n[Cim Authentication v3.pdf p.5]\nAuthClient initialization (v3.0+):\nconst client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });\nAPI Key options removed.",
+      "context": "[Cim Authentication v3.pdf p.5]\nAuthClient initialization (v3.0+):\nconst client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });\nAPI Key options removed.",
       "answer": "To initialize the AuthClient in v3 SDK, use `const client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });` [Cim Authentication v3.pdf p.5]. Do not pass apiKey as it was removed in v3.",
       "ground_truth": "Use tokenProvider and tenantId in SDK v3. apiKey configuration is removed."
     },
@@ -29,7 +29,7 @@
       "mode": "v2_signature_returned_for_v3_query",
       "question": "What parameters does `requireApiKey()` accept in v3?",
       "required_version": "v3",
-      "context": "[Cim Authentication.pdf p.4]\nrequireApiKey(req, res, next) middleware was used in v2. In v3, requireApiKey is deprecated and replaced by authenticateBearer().",
+      "context": "[Cim Authentication.pdf p.4]\nrequireApiKey(req, res, next) middleware checks header 'x-api-key'.",
       "answer": "The `requireApiKey` middleware accepts `(req, res, next)` positional parameters [Cim Authentication.pdf p.4].",
       "ground_truth": "In v3, requireApiKey is deprecated and replaced by authenticateBearer(). In v2 it took (req, res, next)."
     },
@@ -51,7 +51,7 @@
       "mode": "v2_signature_returned_for_v3_query",
       "question": "How do I query paginated items in v3 API?",
       "required_version": "v3",
-      "context": "[Advita DOCs.pdf p.9]\nv2 used ?offset=0&limit=50. v3 uses cursor pagination ?cursor=abc&pageSize=50.",
+      "context": "[Advita DOCs.pdf p.9]\nQuery items using ?offset=0&limit=50 for pagination.",
       "answer": "To query paginated items, pass `?offset=0&limit=50` to the endpoint [Advita DOCs.pdf p.9].",
       "ground_truth": "v3 uses cursor-based pagination (?cursor=abc&pageSize=50). Offset pagination is v2."
     },
@@ -62,7 +62,7 @@
       "mode": "omitted_prerequisite_header_or_import",
       "question": "How do I make an HTTP request to /api/v1/impersonate?",
       "required_version": null,
-      "context": "[Cim Authentication.pdf p.3]\nPOST /api/v1/impersonate\nPrerequisites: Must include header `Authorization: Bearer <admin_token>` and `Content-Type: application/json`.\nBody: { 'userId': 'target_user_id' }.",
+      "context": "[Cim Authentication.pdf p.3]\nPOST /api/v1/impersonate body: { 'userId': '123' }",
       "answer": "Send POST to /api/v1/impersonate with target userId: `{'userId': 'target_user_id'}` [Cim Authentication.pdf p.3].",
       "ground_truth": "POST to /api/v1/impersonate with JSON body {'userId': 'target_user_id'}. Must include prerequisite header Authorization: Bearer <admin_token>."
     },
@@ -84,7 +84,7 @@
       "mode": "omitted_prerequisite_header_or_import",
       "question": "What headers are needed to submit stickersheet verification to /orders/verification?",
       "required_version": null,
-      "context": "[Advita DOCs.pdf p.12]\nPOST /orders/verification requires headers: `Content-Type: application/json` and `x-api-key: <key>`. Payload requires orderId and fileId.",
+      "context": "[Advita DOCs.pdf p.12]\nPOST /orders/verification with orderId and fileId to verify stickersheet serials.",
       "answer": "Just send a POST to /orders/verification with `{'orderId': '123', 'fileId': '456'}` [Advita DOCs.pdf p.12].",
       "ground_truth": "Requires Content-Type: application/json and x-api-key headers along with orderId and fileId."
     },
@@ -106,7 +106,7 @@
       "mode": "omitted_prerequisite_header_or_import",
       "question": "How do I call the QAD ERP sync endpoint /ebi/updateOrder?",
       "required_version": null,
-      "context": "[Advita DOCs.pdf p.14]\nPOST /ebi/updateOrder. Requires `x-erp-signature` HMAC header computed from the payload, and `Content-Type: application/json`.",
+      "context": "[Advita DOCs.pdf p.14]\nPOST /ebi/updateOrder with body: { orderId, inQad }.",
       "answer": "Make a POST call to /ebi/updateOrder with body `{'orderId': 'ord_1', 'inQad': true}` [Advita DOCs.pdf p.14].",
       "ground_truth": "Must include x-erp-signature HMAC header and Content-Type: application/json."
     },
