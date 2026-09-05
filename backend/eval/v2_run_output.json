@@ -1,0 +1,338 @@
+{
+  "agreement_after": 64.0,
+  "results": [
+    {
+      "case_id": "case_01",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "How do I call `getBackorders()` in SDK v3?",
+      "answer": "`getBackorders` accepts single agencyId parameter: getBackorders(agencyId) [Advita FE.pdf p.3].",
+      "verdict": 1,
+      "human": 0,
+      "match": false,
+      "content": "{\n  \"reasoning\": \"The answer correctly states that `getBackorders` takes a single `agencyId` parameter, which matches the SDK v3 signature provided in the documentation context. It directly addresses the user's question without introducing outdated v2 signatures or omitting essential prerequisites that were not requested.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_02",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "How do I initialize the Cimplicity AuthClient in v3 SDK?",
+      "answer": "To initialize the AuthClient in v3 SDK, use `const client = new AuthClient({ tokenProvider: myProvider, tenantId: 't-99' });` [Cim Authentication v3.pdf p.5]. Do not pass apiKey as it was removed in v3.",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer correctly provides the v3 SDK initialization syntax, matches the documentation, and notes the removal of the apiKey option. It is complete and accurate.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_03",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "What parameters does `requireApiKey()` accept in v3?",
+      "answer": "The `requireApiKey` middleware accepts `(req, res, next)` positional parameters [Cim Authentication.pdf p.4].",
+      "verdict": 1,
+      "human": 0,
+      "match": false,
+      "content": "{\n  \"reasoning\": \"The answer correctly states that `requireApiKey` accepts the parameters `(req, res, next)` as documented for v3, directly addressing the question.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_04",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "How do I register an async event listener in SDK v3?",
+      "answer": "In SDK v3, register event listeners using `sdk.subscribe(eventName, asyncHandler)` which returns an unsubscribe handle [Advita SDK v3.pdf p.7].",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer correctly states that SDK v3 uses `sdk.subscribe(eventName, async handler)` to register an async event listener and notes that it returns an unsubscribe handle, matching the documentation. The minor formatting difference does not change the meaning. Therefore the answer is helpful and semantically correct.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_05",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "How do I query paginated items in v3 API?",
+      "answer": "To query paginated items, pass `?offset=0&limit=50` to the endpoint [Advita DOCs.pdf p.9].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_06",
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "How do I make an HTTP request to /api/v1/impersonate?",
+      "answer": "Send POST to /api/v1/impersonate with target userId: `{'userId': 'target_user_id'}` [Cim Authentication.pdf p.3].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer only specifies the POST body but omits the mandatory Authorization Bearer token (or other required authentication headers) needed to call the protected /api/v1/impersonate endpoint. Without these headers the request will fail with 401 Unauthorized, making the answer incomplete and unusable.\",\n  \"verdict\": \"FAIL\"\n}"
+    },
+    {
+      "case_id": "case_07",
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "How do I authenticate calls to /api/revenue analytics?",
+      "answer": "Authenticate by providing `Authorization: Bearer <jwt>` and `x-agency-id: <id>` in the request headers when calling GET /api/revenue [Advita DOCs.pdf p.5].",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer correctly lists both required headers\u2014Authorization: Bearer <jwt> and x-agency-id\u2014exactly as specified in the documentation, and indicates they should be included in the GET /api/revenue request. It is complete, accurate, and helpful for authenticating the call.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_08",
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "What headers are needed to submit stickersheet verification to /orders/verification?",
+      "answer": "Just send a POST to /orders/verification with `{'orderId': '123', 'fileId': '456'}` [Advita DOCs.pdf p.12].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The question asks for the headers required to submit stickersheet verification. The answer only shows the request body and omits any mention of necessary headers (e.g., Authorization, Content-Type, etc.), making it incomplete and unusable.\",\n  \"verdict\": \"FAIL\"\n}"
+    },
+    {
+      "case_id": "case_09",
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "How do I import and initialize the Cimplicity SDK in Node.js?",
+      "answer": "Import CimClient with `import { CimClient } from '@cimplicity/sdk';` and initialize using `const client = new CimClient({ tenantId: process.env.TENANT_ID });` [advita FE.pdf p.1].",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer correctly shows how to import the CimClient from the @cimplicity/sdk package and how to instantiate it with the tenantId from an environment variable, matching the documentation. It directly addresses the question and provides the necessary code snippets, so it is helpful and semantically correct.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_10",
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "How do I call the QAD ERP sync endpoint /ebi/updateOrder?",
+      "answer": "Make a POST call to /ebi/updateOrder with body `{'orderId': 'ord_1', 'inQad': true}` [Advita DOCs.pdf p.14].",
+      "verdict": 1,
+      "human": 0,
+      "match": false,
+      "content": "{\n  \"reasoning\": \"The answer correctly describes how to call the /ebi/updateOrder endpoint with the required POST body, matching the documentation. No version conflict or missing prerequisites are present.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_11",
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "What does wildcard * mean in permission strings?",
+      "answer": "Permission strings format is service:resource:action where wildcard `*` matches all resources or actions, such as `orders:*` for full order permissions [Cim Authentication.pdf p.7].",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer accurately explains that the wildcard '*' in permission strings matches all resources or actions, and provides a correct example. It directly addresses the question and is semantically correct.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_12",
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "What does location suffix -L mean for ShippingItems?",
+      "answer": "If the location ends with `-L`, it designates loaner stock. It sets `reviewReason = 'LOANER'` and `status = PENDING_APPROVAL`, requiring human approval [Advita DOCs.pdf p.9].",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The answer correctly explains that a location ending in `-L` indicates loaner stock requiring manual approval and mentions the `reviewReason = 'LOANER'` as documented. The additional mention of `status = PENDING_APPROVAL` is not part of the provided documentation, but it does not contradict the main point and the question was about the meaning of the suffix, not about status. Therefore the answer is helpful and semantically correct for the user's question.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_13",
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "How does the search query syntax handle prefix matching with BILL-*?",
+      "answer": "The query searches for BILL order types [Advita DOCs.pdf p.6].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_14",
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "How are query parameters with brackets like `filter[status]` parsed?",
+      "answer": "Filters use bracket notation `filter[status]=SUBMITTED` to filter orders by status [Advita DOCs.pdf p.15].",
+      "verdict": 0,
+      "human": 1,
+      "match": false,
+      "content": "{\n  \"reasoning\": \"The answer merely repeats the example syntax without explaining how the bracket notation is interpreted by the API (e.g., as a nested filter object). It does not provide a clear explanation of the parsing mechanism, so it is incomplete and not helpful.\",\n  \"verdict\": \"FAIL\"\n}"
+    },
+    {
+      "case_id": "case_15",
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "What does the `@` prefix in `@cimplicity/sdk` package name indicate?",
+      "answer": "It is just a standard package name [advita FE.pdf p.1].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The candidate answer incorrectly states that the `@` prefix is just a standard package name, which is factually wrong. The documentation clearly says it indicates an npm scoped package under the Cimplicity corporate registry scope `@cimplicity`. Therefore the answer is semantically incorrect and unhelpful.\",\n  \"verdict\": \"FAIL\"\n}"
+    },
+    {
+      "case_id": "case_16",
+      "mode": "numeric_status_code_confusion",
+      "question": "When does the auth server return 403 versus 401?",
+      "answer": "HTTP 401 is returned when authentication token is missing or expired. HTTP 403 is returned when the user is authenticated but lacks sufficient permission for the resource [Cim Authentication.pdf p.8].",
+      "verdict": 1,
+      "human": 1,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The candidate answer accurately restates the documentation: 401 is for missing/invalid/expired tokens, and 403 is for authenticated users lacking permissions. It directly addresses the question and is semantically correct.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_17",
+      "mode": "numeric_status_code_confusion",
+      "question": "What status code is returned when a stickersheet upload file is missing?",
+      "answer": "It returns HTTP 500 Internal Server Error when the file is missing [Advita DOCs.pdf p.12].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_18",
+      "mode": "numeric_status_code_confusion",
+      "question": "What status code is returned upon successful creation of an order via POST /api/v2/orders?",
+      "answer": "Successful order creation returns HTTP 201 Created [Advita DOCs.pdf p.7].",
+      "verdict": 0,
+      "human": 1,
+      "match": false,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_19",
+      "mode": "numeric_status_code_confusion",
+      "question": "What HTTP code indicates rate limiting when calling /api/revenue?",
+      "answer": "Rate limiting returns HTTP 404 Not Found [Advita DOCs.pdf p.5].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\n  \"reasoning\": \"The candidate answer incorrectly states that rate limiting returns HTTP 404 Not Found, whereas the documentation specifies HTTP 429 Too Many Requests. This is a factual error, making the answer unhelpful and semantically incorrect.\",\n  \"verdict\": \"FAIL\"\n}"
+    },
+    {
+      "case_id": "case_20",
+      "mode": "numeric_status_code_confusion",
+      "question": "What status code is returned if an inventory reconciliation calculation fails validation?",
+      "answer": "Returns HTTP 422 Unprocessable Entity with validation error details in the response body [Advita DOCs.pdf p.10].",
+      "verdict": 0,
+      "human": 1,
+      "match": false,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_21",
+      "mode": "partial_multihop_context_truncation",
+      "question": "What are the two ERP systems and which module talks to each?",
+      "answer": "Advita integrates with SAP and QAD. The EBI module pulls inventory analytics from SAP, while orders and PO updates sync to QAD ERP [Advita DOCs.pdf p.4].",
+      "verdict": 0,
+      "human": 1,
+      "match": false,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_22",
+      "mode": "partial_multihop_context_truncation",
+      "question": "Walk through the complete order lifecycle from draft to warehouse fax.",
+      "answer": "The order goes from DRAFT to SUBMITTED [Advita DOCs.pdf p.8].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_23",
+      "mode": "partial_multihop_context_truncation",
+      "question": "How does a stickersheet move from physical surgery to verified billing in Cimplicity?",
+      "answer": "1. Physical label affixed to patient record. 2. Rep photographs and uploads to Azure Blob Storage. 3. Vision OCR extracts serial numbers. 4. Gemini compares extracted serials to billing items. 5. Marked COMPLETED or discrepancy logged [Advita DOCs.pdf p.2, p.12].",
+      "verdict": 0,
+      "human": 1,
+      "match": false,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_24",
+      "mode": "partial_multihop_context_truncation",
+      "question": "What are all five order types and what does each do?",
+      "answer": "The order types are BILL-RESTOCK (bills hospital and restocks rep) and BILL-ONLY (bills hospital only) [Advita DOCs.pdf p.7].",
+      "verdict": 0,
+      "human": 0,
+      "match": true,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_25",
+      "mode": "partial_multihop_context_truncation",
+      "question": "Explain the difference between BillingItem and ShippingItem in data model and approval.",
+      "answer": "BillingItem is consumed in surgery with pricing and links to stickersheet fileId without approval flow. ShippingItem is restocked to the rep, has no pricing, requires approval flow with calculationTrail, and both reference Item [Advita DOCs.pdf p.6].",
+      "verdict": 0,
+      "human": 1,
+      "match": false,
+      "content": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    }
+  ],
+  "disagreements": [
+    {
+      "case_id": "case_01",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "How do I call `getBackorders()` in SDK v3?",
+      "answer": "`getBackorders` accepts single agencyId parameter: getBackorders(agencyId) [Advita FE.pdf p.3].",
+      "human": 0,
+      "judge": 1,
+      "raw": "{\n  \"reasoning\": \"The answer correctly states that `getBackorders` takes a single `agencyId` parameter, which matches the SDK v3 signature provided in the documentation context. It directly addresses the user's question without introducing outdated v2 signatures or omitting essential prerequisites that were not requested.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_03",
+      "mode": "v2_signature_returned_for_v3_query",
+      "question": "What parameters does `requireApiKey()` accept in v3?",
+      "answer": "The `requireApiKey` middleware accepts `(req, res, next)` positional parameters [Cim Authentication.pdf p.4].",
+      "human": 0,
+      "judge": 1,
+      "raw": "{\n  \"reasoning\": \"The answer correctly states that `requireApiKey` accepts the parameters `(req, res, next)` as documented for v3, directly addressing the question.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_10",
+      "mode": "omitted_prerequisite_header_or_import",
+      "question": "How do I call the QAD ERP sync endpoint /ebi/updateOrder?",
+      "answer": "Make a POST call to /ebi/updateOrder with body `{'orderId': 'ord_1', 'inQad': true}` [Advita DOCs.pdf p.14].",
+      "human": 0,
+      "judge": 1,
+      "raw": "{\n  \"reasoning\": \"The answer correctly describes how to call the /ebi/updateOrder endpoint with the required POST body, matching the documentation. No version conflict or missing prerequisites are present.\",\n  \"verdict\": \"PASS\"\n}"
+    },
+    {
+      "case_id": "case_14",
+      "mode": "wildcard_and_special_char_token_dropped",
+      "question": "How are query parameters with brackets like `filter[status]` parsed?",
+      "answer": "Filters use bracket notation `filter[status]=SUBMITTED` to filter orders by status [Advita DOCs.pdf p.15].",
+      "human": 1,
+      "judge": 0,
+      "raw": "{\n  \"reasoning\": \"The answer merely repeats the example syntax without explaining how the bracket notation is interpreted by the API (e.g., as a nested filter object). It does not provide a clear explanation of the parsing mechanism, so it is incomplete and not helpful.\",\n  \"verdict\": \"FAIL\"\n}"
+    },
+    {
+      "case_id": "case_18",
+      "mode": "numeric_status_code_confusion",
+      "question": "What status code is returned upon successful creation of an order via POST /api/v2/orders?",
+      "answer": "Successful order creation returns HTTP 201 Created [Advita DOCs.pdf p.7].",
+      "human": 1,
+      "judge": 0,
+      "raw": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_20",
+      "mode": "numeric_status_code_confusion",
+      "question": "What status code is returned if an inventory reconciliation calculation fails validation?",
+      "answer": "Returns HTTP 422 Unprocessable Entity with validation error details in the response body [Advita DOCs.pdf p.10].",
+      "human": 1,
+      "judge": 0,
+      "raw": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_21",
+      "mode": "partial_multihop_context_truncation",
+      "question": "What are the two ERP systems and which module talks to each?",
+      "answer": "Advita integrates with SAP and QAD. The EBI module pulls inventory analytics from SAP, while orders and PO updates sync to QAD ERP [Advita DOCs.pdf p.4].",
+      "human": 1,
+      "judge": 0,
+      "raw": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_23",
+      "mode": "partial_multihop_context_truncation",
+      "question": "How does a stickersheet move from physical surgery to verified billing in Cimplicity?",
+      "answer": "1. Physical label affixed to patient record. 2. Rep photographs and uploads to Azure Blob Storage. 3. Vision OCR extracts serial numbers. 4. Gemini compares extracted serials to billing items. 5. Marked COMPLETED or discrepancy logged [Advita DOCs.pdf p.2, p.12].",
+      "human": 1,
+      "judge": 0,
+      "raw": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    },
+    {
+      "case_id": "case_25",
+      "mode": "partial_multihop_context_truncation",
+      "question": "Explain the difference between BillingItem and ShippingItem in data model and approval.",
+      "answer": "BillingItem is consumed in surgery with pricing and links to stickersheet fileId without approval flow. ShippingItem is restocked to the rep, has no pricing, requires approval flow with calculationTrail, and both reference Item [Advita DOCs.pdf p.6].",
+      "human": 1,
+      "judge": 0,
+      "raw": "{\"reasoning\": \"API failure\", \"verdict\": \"FAIL\"}"
+    }
+  ]
+}
