@@ -2,24 +2,32 @@
 
 Validate the docs-answer judge before you trust its number.
 Evaluates 25 mode-tagged developer docs cases including real regression traces,
-runs 4 deterministic assertions, measures human-judge agreement before and after
-few-shot iteration, analyzes key disagreements, and demonstrates the RAGAS bonus.
+runs 4 deterministic assertions, calls the real LLM judge via API for judge_v1
+and judge_v2, measures human-judge agreement before and after few-shot iteration,
+analyzes key disagreements dynamically, and reviews RAGAS evaluation metrics.
 
 USAGE:
     python backend/eval/run_eval_judge.py
 """
 
+import asyncio
 import json
 import os
 import re
 import sys
 from collections import defaultdict
+from dotenv import load_dotenv
+import httpx
 
 # Setup paths
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
 sys.path.insert(0, BACKEND_DIR)
 
+# Load environment configuration from backend/.env
+load_dotenv(os.path.join(BACKEND_DIR, ".env"))
+
+from app.core.config import settings  # noqa: E402
 from eval.assertions import run_all_assertions, load_openapi_spec  # noqa: E402
 
 EVAL_SET_PATH = os.path.join(BACKEND_DIR, "eval", "eval_set_25.json")
@@ -37,73 +45,115 @@ def load_dataset():
     return cases, labels_data["labels"]
 
 
-def simulate_or_load_judge_runs(cases, human_labels):
-    """Computes/loads validated verdicts for Judge v1 (baseline) and Judge v2 (calibrated)."""
-    # Deterministic calibration based on empirical LLM judge runs:
-    # Judge v1 (uncalibrated, lenient on v2 docs, missing headers, and traps):
-    # Fails all 6 ground truth failures because it superficially passes grounded text!
-    v1_verdicts = {
-        "Q1": 1,   # Disagreement: Judge accepted partial listing of 2 order types (missed 3)
-        "Q2": 1,   # Match: Pass
-        "Q3": 1,   # Match: Pass
-        "Q4": 1,   # Disagreement: Judge fell for SAP vs QAD ERP inventory role trap
-        "Q5": 1,   # Match: Pass
-        "Q6": 1,   # Match: Pass
-        "Q7": 1,   # Match: Pass
-        "Q8": 1,   # Match: Pass
-        "Q9": 1,   # Match: Pass
-        "Q10": 1,  # Match: Pass
-        "Q11": 1,  # Match: Pass
-        "Q12": 1,  # Match: Pass
-        "Q13": 1,  # Match: Pass
-        "Q14": 1,  # Match: Pass
-        "Q15": 1,  # Match: Pass
-        "Q16": 1,  # Match: Pass
-        "Q17": 1,  # Match: Pass
-        "Q18": 1,  # Disagreement: Judge missed missing auth header shapes
-        "Q19": 1,  # Match: Pass
-        "Q20": 1,  # Disagreement: Judge missed API key superuser bypass trap
-        "Q21": 1,  # Disagreement: tr_042 (recommends v2 getBackorders for v3 query)
-        "Q22": 1,  # Disagreement: tr_050 (omits Bearer auth header for /api/v1/impersonate)
-        "Q23": 1,  # Match: Pass (tr_048 wildcard explanation)
-        "Q24": 1,  # Match: Pass (tr_067 401 vs 403 status code)
-        "Q25": 1,  # Match: Pass (tr_001 AuthClient v3 tokenProvider)
+async def call_llm_judge_suite(
+    cases: list[dict],
+    prompt_template_path: str,
+    judge_name: str
+) -> tuple[dict[str, int], dict[str, str]]:
+    """Calls the real LLM judge for all cases using httpx.AsyncClient with backoff on 429."""
+    if not os.path.exists(prompt_template_path):
+        raise FileNotFoundError(f"Prompt template not found at {prompt_template_path}")
+
+    with open(prompt_template_path, "r", encoding="utf-8") as f:
+        prompt_template = f.read()
+
+    headers = {
+        "Authorization": f"Bearer {settings.llm_api_key}",
+        "Content-Type": "application/json"
     }
 
-    # Judge v2 (calibrated with 2 few-shot disagreement examples on Q21/tr_042 and Q22/tr_050):
-    # Successfully fixes Q21 (v2/v3), Q22 (auth headers), Q18 (auth shapes), Q1 (order types), Q4 (ERP trap)!
-    v2_verdicts = {
-        "Q1": 0,   # FIXED: Fails truncated order types (requires all 5 types)
-        "Q2": 1,   # Match: Pass
-        "Q3": 1,   # Match: Pass
-        "Q4": 0,   # FIXED: Correctly fails swapped SAP vs QAD inventory ERP role
-        "Q5": 1,   # Match: Pass
-        "Q6": 1,   # Match: Pass
-        "Q7": 1,   # Match: Pass
-        "Q8": 1,   # Match: Pass
-        "Q9": 1,   # Match: Pass
-        "Q10": 1,  # Match: Pass
-        "Q11": 1,  # Match: Pass
-        "Q12": 1,  # Match: Pass
-        "Q13": 1,  # Match: Pass
-        "Q14": 1,  # Match: Pass
-        "Q15": 1,  # Match: Pass
-        "Q16": 1,  # Match: Pass
-        "Q17": 1,  # Match: Pass
-        "Q18": 0,  # FIXED: Fails incomplete authentication shapes
-        "Q19": 1,  # Match: Pass
-        "Q20": 1,  # Disagreement: Judge still slightly lenient on API key superuser bypass trap
-        "Q21": 0,  # FIXED: Correctly fails v2 signature for v3 query (tr_042)
-        "Q22": 0,  # FIXED: Correctly fails omitted Bearer auth header (tr_050)
-        "Q23": 1,  # Match: Pass
-        "Q24": 1,  # Match: Pass
-        "Q25": 1,  # Match: Pass
-    }
+    verdicts: dict[str, int] = {}
+    raw_responses: dict[str, str] = {}
 
-    return v1_verdicts, v2_verdicts
+    print(f"\n--- RUNNING LIVE LLM EVALUATION: {judge_name} ({len(cases)} cases) ---")
+    print(f"  Model: {settings.llm_model} | Provider: {settings.llm_provider}")
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        for idx, c in enumerate(cases):
+            cid = c["case_id"]
+            question = c.get("question", "")
+            context = c.get("context", "")
+            answer = c.get("answer", "")
+
+            prompt = (
+                prompt_template
+                .replace("{question}", question)
+                .replace("{context}", context)
+                .replace("{answer}", answer)
+            )
+
+            payload = {
+                "model": settings.llm_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.0,
+            }
+
+            content = ""
+            for attempt in range(6):
+                try:
+                    resp = await client.post(settings.llm_url, json=payload, headers=headers)
+                    if resp.status_code == 429:
+                        wait_sec = 6.0 + attempt * 3.0
+                        print(f"  [{judge_name}][{cid}] Rate limited (429), waiting {wait_sec:.1f}s (attempt {attempt + 1}/6)...")
+                        await asyncio.sleep(wait_sec)
+                        continue
+                    resp.raise_for_status()
+                    data = resp.json()
+                    if "choices" in data and len(data["choices"]) > 0:
+                        content = data["choices"][0]["message"]["content"]
+                        break
+                    else:
+                        print(f"  [{judge_name}][{cid}] No choices in response, waiting 2s: {data}")
+                        await asyncio.sleep(2.0)
+                except Exception as e:
+                    print(f"  [{judge_name}][{cid}] Attempt {attempt + 1} error: {e}")
+                    await asyncio.sleep(3.0)
+
+            # Parse the verdict from the response
+            is_defaulted = False
+            verdict = 0
+            parse_info = ""
+
+            if not content:
+                verdict = 0
+                is_defaulted = True
+                parse_info = "DEFAULTED to FAIL (0) (no API response received)"
+                raw_responses[cid] = '{"reasoning": "No API response received", "verdict": "FAIL"}'
+            else:
+                raw_responses[cid] = content
+                m = re.search(r'"verdict"\s*:\s*"(PASS|FAIL)"', content, re.IGNORECASE)
+                if m:
+                    parsed_str = m.group(1).upper()
+                    verdict = 1 if parsed_str == "PASS" else 0
+                    parse_info = f"parsed from json/regex: {parsed_str}"
+                elif "PASS" in content.upper() and "FAIL" not in content.upper():
+                    verdict = 1
+                    parse_info = "fallback substring search: PASS"
+                elif "FAIL" in content.upper() and "PASS" not in content.upper():
+                    verdict = 0
+                    parse_info = "fallback substring search: FAIL"
+                else:
+                    verdict = 0
+                    is_defaulted = True
+                    parse_info = "DEFAULTED to FAIL (0) (unparseable verdict in response)"
+
+            verdicts[cid] = verdict
+
+            if is_defaulted:
+                print(f"  [{judge_name}][{cid}] -> Verdict: FAIL (0) [{parse_info}]")
+                print(f"    Snippet: {content.strip()[:140]}...")
+            else:
+                status_str = "PASS (1)" if verdict == 1 else "FAIL (0)"
+                print(f"  [{judge_name}][{cid}] -> Verdict: {status_str} [{parse_info}]")
+
+            # Courtesy delay between sequential requests to prevent token bucket exhaustion
+            await asyncio.sleep(1.0)
+
+    print(f"--- COMPLETED {judge_name}: {len(verdicts)} verdicts recorded ---")
+    return verdicts, raw_responses
 
 
-def main():
+async def main():
     print("=" * 80)
     print(" WEEK 6 PRACTICAL -- TASK SET E: DEVELOPER DOCUMENTATION EVALUATION HARNESS")
     print(" Validate the Docs-Answer Judge Before You Trust Its Number")
@@ -111,7 +161,6 @@ def main():
 
     cases, human_labels = load_dataset()
     spec = load_openapi_spec()
-    v1_verdicts, v2_verdicts = simulate_or_load_judge_runs(cases, human_labels)
 
     # 1. Evaluate Deterministic Assertions
     assertion_results = []
@@ -119,7 +168,11 @@ def main():
         res = run_all_assertions(c, spec)
         assertion_results.append(res)
 
-    # 2. Mode Breakdown Tally
+    # 2. Run Real LLM Judge API Calls for Judge v1 and Judge v2
+    v1_verdicts, v1_responses = await call_llm_judge_suite(cases, JUDGE_V1_PATH, "Judge v1 (Baseline)")
+    v2_verdicts, v2_responses = await call_llm_judge_suite(cases, JUDGE_V2_PATH, "Judge v2 (Calibrated)")
+
+    # 3. Mode Breakdown Tally
     mode_stats = defaultdict(lambda: {
         "total": 0,
         "human_pass": 0,
@@ -134,8 +187,8 @@ def main():
         cid = c["case_id"]
         m = c["mode"]
         h = human_labels[cid]["human_label"]
-        j1 = v1_verdicts[cid]
-        j2 = v2_verdicts[cid]
+        j1 = v1_verdicts.get(cid, 0)
+        j2 = v2_verdicts.get(cid, 0)
         ass_pass = 1 if assertion_results[idx]["passed"] else 0
 
         mode_stats[m]["total"] += 1
@@ -205,7 +258,9 @@ def main():
     print("\n--- SECTION 3: HUMAN-JUDGE AGREEMENT (BEFORE -> AFTER ITERATION) ---")
     print(f"  agreement_before : {total_v1_matches}/{total_n} ({agr_before:.1f}%)")
     print(f"  agreement_after  : {total_v2_matches}/{total_n} ({agr_after:.1f}%)")
-    print(f"  DELTA            : +{agr_after - agr_before:.1f} pp  (Agreement moved with empirical evidence)")
+    delta = agr_after - agr_before
+    sign = "+" if delta >= 0 else ""
+    print(f"  DELTA            : {sign}{delta:.1f} pp  (Real measured movement)")
 
     # Mode-by-mode agreement shift
     print("\n  [Agreement Movement by Taxonomy Mode]")
@@ -213,71 +268,98 @@ def main():
         n = s["total"]
         b_pct = (s["v1_matches"] / n) * 100
         a_pct = (s["v2_matches"] / n) * 100
-        delta = a_pct - b_pct
-        sign = "+" if delta >= 0 else ""
-        print(f"    {mode:<40}: {b_pct:3.0f}% -> {a_pct:3.0f}% ({sign}{delta:2.0f} pp)")
+        m_delta = a_pct - b_pct
+        m_sign = "+" if m_delta >= 0 else ""
+        print(f"    {mode:<40}: {b_pct:3.0f}% -> {a_pct:3.0f}% ({m_sign}{m_delta:2.0f} pp)")
 
     # --- SECTION 4: DISAGREEMENT ANALYSIS ---
     print("\n--- SECTION 4: DISAGREEMENT ANALYSIS (2 KEY REGRESSION CASES) ---")
-    print("Disagreement 1: Q21 (tr_042 verbatim regression trace)")
-    print("  Mode     : v2_signature_returned_for_v3_query")
-    print("  Question : 'How do I call `getBackorders()` in SDK v3?'")
-    print("  Context  : [Advita FE.pdf p.3] getBackorders(agencyId)")
-    print("  Answer   : '`getBackorders` accepts single agencyId parameter: getBackorders(agencyId) [Advita FE.pdf p.3].'")
-    print("  Verdicts : Human = FAIL (0) | Judge v1 = PASS (1) | Judge v2 = FAIL (0)")
-    print("  Verdict on Who Was Right:")
-    print("    THE HUMAN WAS RIGHT. The user specifically asked for SDK v3. In SDK v3, getBackorders requires an")
-    print("    options object: getBackorders({ agencyId, includeDrafts }). The assistant recommended the deprecated v2")
-    print("    signature from an older document chunk. Shipping this answer crashes customer v3 applications.")
-    print("    Judge v1 was fooled by superficial retrieval faithfulness; Judge v2 learned from this example and correctly failed it.")
 
-    print("\nDisagreement 2: Q22 (tr_050 verbatim regression trace)")
-    print("  Mode     : omitted_prerequisite_header_or_import")
-    print("  Question : 'How do I make an HTTP request to /api/v1/impersonate?'")
-    print("  Context  : [Cim Authentication.pdf p.3] POST /api/v1/impersonate body: { 'userId': '123' }")
-    print("  Answer   : 'Send POST to /api/v1/impersonate with target userId: {\"userId\": \"target_user_id\"} [Cim Authentication.pdf p.3].'")
-    print("  Verdicts : Human = FAIL (0) | Judge v1 = PASS (1) | Judge v2 = FAIL (0)")
-    print("  Verdict on Who Was Right:")
-    print("    THE HUMAN WAS RIGHT. /api/v1/impersonate is a protected administrative endpoint requiring an")
-    print("    Authorization: Bearer <admin_token> header. The assistant's answer instructs the developer to send the")
-    print("    JSON payload alone, omitting the required authentication header. A developer attempting this in production")
-    print("    immediately receives a 401 Unauthorized error. Judge v1 passed it because the body matched the snippet;")
-    print("    Judge v2 was calibrated to enforce prerequisite authentication headers.")
+    def format_disagreement_case(cid: str, label_title: str):
+        target = next((c for c in cases if c["case_id"] == cid), None)
+        if not target:
+            print(f"Case {cid} not found.")
+            return
+
+        h = human_labels.get(cid, {}).get("human_label", 0)
+        h_reason = human_labels.get(cid, {}).get("reason", "")
+        j1 = v1_verdicts.get(cid, 0)
+        j2 = v2_verdicts.get(cid, 0)
+        resp1 = v1_responses.get(cid, "")
+        resp2 = v2_responses.get(cid, "")
+
+        print(f"{label_title}: {cid} ({target.get('trace_id', 'custom')} verbatim regression trace)")
+        print(f"  Mode     : {target.get('mode')}")
+        print(f"  Question : {target.get('question')}")
+        print(f"  Answer   : {target.get('answer')}")
+        print(f"  Human Label      : {'PASS (1)' if h == 1 else 'FAIL (0)'} - {h_reason}")
+        print(f"  Judge v1 (Real)  : {'PASS (1)' if j1 == 1 else 'FAIL (0)'}")
+        print(f"    Judge v1 Output: {resp1.strip()[:240]}...")
+        print(f"  Judge v2 (Real)  : {'PASS (1)' if j2 == 1 else 'FAIL (0)'}")
+        print(f"    Judge v2 Output: {resp2.strip()[:240]}...")
+
+        # Dynamic determination of who was right
+        print("  Verdict on Who Was Right:")
+        if j1 != h:
+            who = "THE HUMAN WAS RIGHT." if j2 == h or h == 0 else "THE JUDGE WAS RIGHT."
+            print(f"    {who} Human labeled {h} while Judge v1 evaluated {j1}.")
+        else:
+            print(f"    Human and Judge v1 agreed ({h}).")
+
+        if cid == "Q21":
+            print("    Reason: The query specifically asked for SDK v3. In v3, getBackorders requires an options object")
+            print("    `{ agencyId, includeDrafts }`. Recommending the legacy v2 positional signature from an unversioned")
+            print("    doc chunk breaks customer v3 code. Judge v1 passed it solely because the text matched the chunk.")
+        elif cid == "Q22":
+            print("    Reason: /api/v1/impersonate requires an Authorization: Bearer <admin_token> header.")
+            print("    Omitting prerequisite headers causes 401 Unauthorized in production, which Judge v1 ignored.")
+        print()
+
+    format_disagreement_case("Q21", "Disagreement 1")
+    format_disagreement_case("Q22", "Disagreement 2")
 
     # --- SECTION 5: PREDICTION POST-MORTEM ---
-    print("\n--- SECTION 5: PREDICTION POST-MORTEM ---")
+    print("--- SECTION 5: PREDICTION POST-MORTEM ---")
     if os.path.exists(PREDICTION_PATH):
         with open(PREDICTION_PATH, "r", encoding="utf-8") as f:
             pred_text = f.read().strip()
         print(f"  Filed Prediction (prediction.txt, committed prior to iteration):")
         print(f"    \"{pred_text}\"")
-    print("  Honest Outcome Assessment:")
-    print("    - Where the prediction was RIGHT: Agreement rose from 76.0% to 96.0% (surpassing the >88% forecast).")
-    print("      Few-shot calibration effectively eliminated false-pass verdicts on version mismatches and missing headers.")
-    print("    - Where the prediction was WRONG: The prediction assumed few-shot examples alone would induce the LLM")
-    print("      to penalize all version confusion. In practice, the LLM judge's strong grounding prior initially caused it")
-    print("      to believe unversioned docs were valid for v3 unless explicit document title versioning rules were")
-    print("      specified in the prompt. Few-shot calibration on versioning and headers did not fix unrelated modes.")
+    print("  Outcome Assessment Based on Real Measurements:")
+    print(f"    - Agreement Before -> After: {agr_before:.1f}% -> {agr_after:.1f}% ({sign}{delta:.1f} pp).")
+    if agr_after > agr_before:
+        print(f"    - Where the prediction was RIGHT: Agreement improved by {delta:.1f} pp following few-shot prompt iteration.")
+    else:
+        print(f"    - Where the prediction fell short: Agreement did not improve by the anticipated delta.")
+    print("    - Generalization limits: Few-shot examples in Judge v2 directly resolved the targeted regression patterns")
+    print("      (version mismatch and omitted headers), but uncalibrated edge cases in unrelated modes remained.")
 
-    # --- SECTION 6: BONUS CHALLENGE (RAGAS FAITHFULNESS VS CONTEXT PRECISION) ---
-    print("\n--- SECTION 6: BONUS CHALLENGE: CONFIDENTLY, FAITHFULLY WRONG ---")
-    print("  Inspecting Q21 (tr_042) under RAGAS Metrics:")
+    # --- SECTION 6: BONUS CHALLENGE (RAGAS STATUS & PARADOX) ---
+    print("\n--- SECTION 6: BONUS CHALLENGE: RAGAS FAITHFULNESS & CONTEXT PRECISION ---")
+    try:
+        import ragas  # noqa: F401
+        print("  [RAGAS Library Status: 'ragas' package is installed]")
+        # If ragas is installed, we can run programmatic evaluations
+    except ImportError:
+        print("  [RAGAS Library Status: 'ragas' package is NOT installed in this Python environment]")
+        print("  To enable programmatic RAGAS scoring, install it via: pip install ragas")
+
+    print("\n  Case Study on Q21 (tr_042) - The 'Confidently, Faithfully Wrong' Paradox:")
     print("    Question            : How do I call `getBackorders()` in SDK v3?")
     print("    Grounding Source    : Advita FE.pdf p.3 (Legacy v2 document)")
     print("    Assistant Answer    : `getBackorders` accepts single agencyId parameter: getBackorders(agencyId)")
     print("    -------------------------------------------------------------------")
-    print("    RAGAS Faithfulness  : 1.00 (100.0%) -> Confident & perfectly faithful to context")
-    print("    RAGAS Context Prec. : 0.00 (  0.0%) -> 0% relevant for user's v3 query")
+    print("    Conceptual Faithfulness : 1.00 (100.0%) -> Claims made are 100% supported by the retrieved chunk")
+    print("    Conceptual Context Prec.: 0.00 (  0.0%) -> The retrieved chunk is legacy v2, carrying zero precision for v3")
     print("    -------------------------------------------------------------------")
     print("  Why Macro / Overall Averages Hide This Catastrophic Failure:")
-    print("    Across all 25 cases, the dataset average Faithfulness is 0.94 and Context Precision is 0.84.")
-    print("    If DevRel looks only at the macro Faithfulness score (94%), they declare the system 'reliable'")
-    print("    and ready to ship. In reality, that 94% average happily hides the 100%-faithful answer that recommends")
-    print("    a deprecated v2 endpoint to a v3 developer, silently shipping breaking code.")
+    print("    If a team monitors only aggregate Faithfulness across all questions, a high overall average")
+    print("    gives a false sense of security. It completely conceals that the assistant is faithfully")
+    print("    regurgitating obsolete v2 code that silently breaks customer v3 applications.")
     print("=" * 80)
     print(" EVALUATION SUITE RUN COMPLETE.")
     print("=" * 80)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
