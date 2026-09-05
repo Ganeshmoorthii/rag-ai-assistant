@@ -1,0 +1,526 @@
+[
+  {
+    "id": "Q1",
+    "doc": "BIZ",
+    "difficulty": "E",
+    "question": "What are the order types and what does each do?",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      "BILL-RESTOCK",
+      "BILL-ONLY",
+      "RESTOCK-ONLY",
+      "INSTRUMENT-QUOTE",
+      "DIRECT-SALE"
+    ],
+    "must_pass": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.8",
+      "Advita DOCs.pdf p.3",
+      "Advita DOCs.pdf p.7",
+      "Advita DOCs.pdf p.6"
+    ],
+    "answer": "**Order types (as described in the Advita docs)**  \n\n| Order type | What it does | What components an Order has | Key module(s) triggered |\n|------------|--------------|------------------------------|-------------------------|\n| **BILL‑ONLY** | The rep wants the hospital (or the customer) to be billed for the items, but no replacement or restock of inventory is required. | *BillingComponent* + one or more *BillingItem*s.  No *ShippingComponent* is created. | Billing (pricing, receipt generation, email), QAD sync for the sales order. |\n| **RESTOCK‑ONLY** | The rep needs to send back or replace inventory (consignment or loaner stock) but no billing is required. | *ShippingComponent* + one or more *ShippingItem*s.  No *BillingComponent*. | Shipping/warehouse fax, restocking logic, inventory checks via SAP/EBI. |\n| **BILL‑RESTOCK** | The rep wants to both bill the hospital and restock inventory in the same order. | Both *BillingComponent* (with *BillingItem*s) **and** *ShippingComponent* (with *ShippingItem*s). | All of the above modules run: billing, shipping, QAD sync, analytics. |\n\n*Where this is documented*  \n- The decision‑making for the order type is shown in the flow diagram on **p.6**: “Rep creates Order (BILL‑RESTOCK / BILL‑ONLY / etc.)”.  \n- The core data‑model diagram on **p.7** clarifies that a “BillingComponent” exists only for billing‑type orders and a “ShippingComponent” exists only for restock‑type orders.\n\nThese three order types cover all the scenarios the system is designed to handle. If an order requires only billing, only a BillingComponent is added; if it requires only restocking, only a ShippingComponent is added; and if it needs both, the order contains both components.",
+    "elapsed_ms": 8448.5
+  },
+  {
+    "id": "Q2",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "What is a stickersheet and what happens to it in Cimplicity?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "regulatory",
+      "Azure Blob",
+      "Vision OCR",
+      "blue",
+      "red"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.2",
+      "Advita DOCs.pdf p.12",
+      "Advita DOCs.pdf p.6",
+      "Cim Authentication.pdf p.1"
+    ],
+    "answer": "A **stickersheet** is the small, physical label that comes with every implant or medical device.  \nIt contains the device’s lot number and serial number and is required to be attached to the patient’s surgical record for legal‑regulatory compliance.\n\nIn Cimplicity the stickersheet goes through several steps:\n\n1. **Capture & Upload** – The sales representative scans or photographs the stickersheet and uploads the image to Cimplicity.  \n2. **Storage** – The file is stored in Azure Blob Storage under the *Files* module (see Advita DOCs.pdf p.2).  \n3. **Processing** – Cimplicity runs Google Cloud Vision OCR on the uploaded image to read the lot/serial numbers. The annotations are color‑coded (blue for valid, red for discrepancy).  \n4. **Verification** – The AI (Google Gemini) compares the serial numbers extracted from the stickersheet with the items that were billed. If they match, the order’s verification status is set to *COMPLETED*; if not, a *VerificationDiscrepancy* is created (see Advita DOCs.pdf p.12).  \n\nThus, the stickersheet is captured, stored, OCR‑processed, and used to automatically verify billing accuracy in Cimplicity.",
+    "elapsed_ms": 3182.3
+  },
+  {
+    "id": "Q3",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "How does AI verification of an order work, and what does `verificationStatus` mean?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "Gemini",
+      "COMPLETED",
+      "SKIPPED"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.12",
+      "Advita DOCs.pdf p.8",
+      "Advita DOCs.pdf p.11",
+      "Advita DOCs.pdf p.14"
+    ],
+    "answer": "**AI verification of an order**\n\n1. **Sticker‑sheet image** – When a rep submits a stickersheet for an order, the system uploads the image to the *verification* endpoint (`POST /orders/verification`).  \n2. **Google Gemini** – The uploaded image is sent to Google Gemini, which reads the stickersheet and extracts the serial numbers on the picture.  \n3. **Comparison** – The extracted serial numbers are compared with the serial numbers that are stored on the order’s `billingItems`.  \n4. **Result**  \n   * **Match** – If every serial number on the image matches the corresponding billing item, the order’s `verificationStatus` is set to **COMPLETED**.  \n   * **No match** – If there is a mismatch, a `VerificationDiscrepancy` is created (recording the reason, the problematic serial number, and its status), and the order’s `verificationStatus` remains **SKIPPED** (it never becomes COMPLETED).  \n   * **No stickersheet** – If the rep does not submit a stickersheet, the status is also set to **SKIPPED**.  \n   * **Restock‑only orders** – These orders have no billing or stickersheet to verify, so they are naturally marked **SKIPPED**.  \n\n**What `verificationStatus` means**\n\n- **COMPLETED** – AI has verified the stickersheet and all serial numbers match the order’s billing items.  \n- **SKIPPED** – Verification was not performed because no stickersheet was submitted, the rep chose to skip it, or the order is a restock‑only order that does not require verification.  \n\nThese definitions come from *Advita DOCs.pdf*, pages 12 and 8.",
+    "elapsed_ms": 3318.1
+  },
+  {
+    "id": "Q4",
+    "doc": "BIZ",
+    "difficulty": "H",
+    "question": "Which ERP does the EBI module pull inventory data from?",
+    "passed_all": false,
+    "pass_rate": 0.5,
+    "must_contain": [
+      "SAP",
+      "QAD"
+    ],
+    "must_pass": [
+      true,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.3",
+      "Advita DOCs.pdf p.4",
+      "Advita DOCs.pdf p.12",
+      "Advita DOCs.pdf p.14"
+    ],
+    "answer": "The EBI module pulls inventory data from **SAP**【Advita DOCs.pdf p.3】【Advita DOCs.pdf p.12】",
+    "elapsed_ms": 2493.8
+  },
+  {
+    "id": "Q5",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "How does a ShippingItem get approved or rejected?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "-L",
+      "restockMax",
+      "calculationTrail"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.8",
+      "Advita DOCs.pdf p.9",
+      "Cim Authentication.pdf p.6",
+      "Advita DOCs.pdf p.7"
+    ],
+    "answer": "**ShippingItem approval / rejection**\n\nThe approval logic for a `ShippingItem` is defined in **Advita DOCs.pdf p.9**.  \nIt follows these steps:\n\n| Step | Condition | Result |\n|------|-----------|--------|\n| 1 | **Location ends in “-L”** | The item is treated as a *loaner* item. |\n| 1a | If it is a loaner, `reviewReason` is set to **“LOANER”** and the normal consignment status becomes **PENDING_APPROVAL**. |\n| 1b | If the location does **not** end in “-L”, the item is treated as a *consignment* and skips the loaner logic. |\n| 2 | **Check restockMax** – The system looks up the `restockMaxes` table for this item. |\n| 2a | If the requested quantity **< max** → **approved** (`status = APPROVED`). |\n| 2b | If the requested quantity **≥ max** → **rejected** (`status = REJECTED`). |\n| 2c | The reason for rejection is stored in `approvalReason` / `rejectionReason`. Typical values include “Healthy target”, “Not at target levels”, or “kit level”. |\n| 3 | **Special cases** (logged in `calculationTrail`) are handled: |\n| 3a | Deprecation of an old item number (maps to a new one; maxes combined). |\n| 3b | Exception where `maxToShipOut = @` but qty is 1 – the system allows it anyway. |\n\n**Result of the decision** – The `ItemNumber`, `AgencyCode`, `Restock Max`, `Requested`, and the final **Decision** (e.g., “Fully approved — Approving 1 of 1”) are recorded in the `calculationTrail` field for audit purposes.\n\nThus, a `ShippingItem` gets approved if it’s a loaner or its requested quantity is below the restock maximum; otherwise, it is rejected, and the reason is recorded.",
+    "elapsed_ms": 3344.4
+  },
+  {
+    "id": "Q6",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "What's the difference between a BillingItem and a ShippingItem?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "BillingComponent",
+      "ShippingComponent",
+      "Item"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.8",
+      "Advita DOCs.pdf p.7",
+      "Advita DOCs.pdf p.5",
+      "Advita DOCs.pdf p.9"
+    ],
+    "answer": "**BillingItem vs. ShippingItem**\n\n| Feature | BillingItem | ShippingItem |\n|---------|-------------|--------------|\n| **Purpose** | Represents a product that was used in a surgery and must be billed to the hospital. | Represents a product that must be shipped back (loaner or consignment) to the rep or warehouse. |\n| **Pricing** | Contains `price` and `customPrice` fields and is billed at those rates. | No `customPrice`; uses `price` and `discountedPrice` to calculate restock cost, but not for billing. |\n| **Approval & Status** | Has `status`, `reviewReason`, and `approval` fields; approval is tied to the billing process. | Has `status`, `reviewReason`, `approvalReason`, and `approval` logic that distinguishes *loaner* from *consignment* shipments. |\n| **Attachments** | Linked to a file (e.g., stickersheet photo) via `fileId`. | No direct stickersheet attachment; approval decisions are logged in `calculationTrail`. |\n| **Location / Tracking** | No location field. | Includes `location`, `serialNumber`, and `lotOrSerial` for inventory tracking. |\n| **Parent Component** | Lives under `BillingComponent` inside an `Order`. | Lives under `ShippingComponent` inside an `Order`. |\n| **Item Reference** | Both share an `Item` that holds product details (number, description, etc.). | Same shared `Item`. |\n\n**Key takeaway:**  \nA **BillingItem** is about generating revenue for a used product and includes billing‑specific pricing and approval data.  \nA **ShippingItem** is about moving stock back (loaner/consignment), tracking inventory location/serial, and applying restock‑approval logic.\n\n*(Sources: Advita DOCs.pdf – p.8 for the key differences, p.7 for the component structure, p.9 for ShippingItem fields.)*",
+    "elapsed_ms": 3912.3
+  },
+  {
+    "id": "Q7",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "Walk through the order lifecycle statuses.",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      "DRAFT",
+      "SUBMITTED",
+      "inQad",
+      "inCsFax"
+    ],
+    "must_pass": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.3",
+      "Advita DOCs.pdf p.14",
+      "Advita DOCs.pdf p.8",
+      "Advita DOCs.pdf p.6"
+    ],
+    "answer": "I’m sorry, but the documents you provided do not contain a list or description of the specific order‑lifecycle status values. The only mention is a general reference to a `status` field (page 8), but the actual status values or order of transition are not detailed.",
+    "elapsed_ms": 11429.1
+  },
+  {
+    "id": "Q8",
+    "doc": "BIZ",
+    "difficulty": "E",
+    "question": "What counts toward revenue reporting?",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      "BILL-ONLY",
+      "BILL-RESTOCK",
+      "RESTOCK-ONLY"
+    ],
+    "must_pass": [
+      false,
+      false,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.5",
+      "Advita DOCs.pdf p.6",
+      "Advita DOCs.pdf p.14",
+      "Advita DOCs.pdf p.8"
+    ],
+    "answer": "Revenue reporting only includes orders that actually generate income. According to the documentation, this means **only “BILL‑ONLY” and “BILL‑RESTOCK” orders are counted**. Orders marked “RESTOCK‑ONLY” are excluded because no money changes hands in those cases.  \n\n*Source: Advita DOCs.pdf, page 5 (Revenue module description) and page 14 (post‑order flow notes).*",
+    "elapsed_ms": 3389.4
+  },
+  {
+    "id": "Q9",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "What happens after a physical inventory audit finds a mismatch?",
+    "passed_all": false,
+    "pass_rate": 0.6666666666666666,
+    "must_contain": [
+      "transfer",
+      "excess",
+      "1.4"
+    ],
+    "must_pass": [
+      true,
+      false,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.11",
+      "Advita DOCs.pdf p.14",
+      "Advita DOCs.pdf p.12",
+      "Advita DOCs.pdf p.4"
+    ],
+    "answer": "After an audit audit finds a mismatch, the system records a **Discrepancy**.  \n\n* The audit record shows the gap between the counted quantity and what the system expects.  \n* If the mismatch is a **missing item**, the system automatically creates a **Transfer** document to move the needed stock from the appropriate agency or rep to cover the gap.  \n* For very large discrepancies (e.g., exceeding a threshold), the system also applies a commission deduction (cost × 1.4) as noted in the audit logic.  \n\nThese actions are defined in the audit flow on page 11 (“Discrepancy … Transfer”) and the “Missing items > auto‑create a Transfer to cover” description on page 12.",
+    "elapsed_ms": 12863.6
+  },
+  {
+    "id": "Q10",
+    "doc": "BIZ",
+    "difficulty": "M",
+    "question": "How are restock max levels set and used?",
+    "passed_all": false,
+    "pass_rate": 0.75,
+    "must_contain": [
+      "itemNumber",
+      "agencyCode",
+      "max",
+      "/demandPlanning/load/max"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.10",
+      "Advita DOCs.pdf p.4",
+      "Advita DOCs.pdf p.14",
+      "Advita DOCs.pdf p.3"
+    ],
+    "answer": "**How restock‑max levels are set**\n\n* Managers define a ceiling for each item in each agency.  \n  * The value is stored in the **RestockMax** table as  \n    * `itemNumber` – e.g., “320‑32‑36”  \n    * `agencyCode` – e.g., “246SMIT”  \n    * `max` – the maximum quantity allowed for that item/agency (p.10).  \n  * These limits can be uploaded in bulk with a **manual Excel file** or synced automatically from SharePoint (p.4).  \n\n**How restock‑max levels are used**\n\n1. **Restock request**  \n   * A rep submits a restock request for an item.  \n   * The system looks up the `RestockMax` value for the item/agency pair (p.10).  \n2. **Approval logic**  \n   * The system checks current on‑hand inventory (from EBI/SAP).  \n   * If `currentInventory + requestedQty < max`, the request is **approved**.  \n   * If the sum exceeds `max`, the request is **rejected** and the rep is told to move inventory within the agency (p.10).  \n\n3. **Triggering restocking**  \n   * When on‑hand stock drops below the `max` level, a restock is automatically triggered to bring the inventory back up to the ceiling (p.4).  \n\nThus, restock‑max levels act as a ceiling that restricts how many units of each product a rep can hold, ensuring that inventory remains within the limits set by management.",
+    "elapsed_ms": 9751.2
+  },
+  {
+    "id": "Q11",
+    "doc": "BIZ",
+    "difficulty": "E",
+    "question": "What sections appear in the Action Center and what does each show?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "Needs Billing",
+      "Missing PO",
+      "Backorders",
+      "Restocks",
+      "Stickersheet Inbox"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.13",
+      "Advita DOCs.pdf p.5",
+      "Advita DOCs.pdf p.6",
+      "Cim Authentication.pdf p.8"
+    ],
+    "answer": "**Action Center (Command HQ)** – the daily dashboard for reps and managers\n\n| Section | What it shows (source) |\n|---------|------------------------|\n| **Needs Billing** | Surgeries that happened but haven’t been billed yet. *(p.5)* |\n| **Missing PO** | Orders where the hospital has not supplied a purchase‑order number. *(p.5)* |\n| **Backorders** | Items that are out of stock and waiting to ship. *(p.5)* |\n| **Restocks** | Pending restock shipments. *(p.5)* |\n| **Stickersheet Inbox** | Uploaded stickersheets that are still waiting to be processed. *(p.5)* |\n| **Urgent Surgeries** | Past surgeries that have not yet been billed. *(p.13)* |\n\nThese sections surface the most urgent tasks for the team, from billing gaps to inventory gaps and file processing.",
+    "elapsed_ms": 10839.6
+  },
+  {
+    "id": "Q12",
+    "doc": "BIZ",
+    "difficulty": "H",
+    "question": "Does `GET /ebi/locations` return loaner locations?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "No",
+      "-L"
+    ],
+    "must_pass": [
+      true,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.9",
+      "Advita DOCs.pdf p.14",
+      "Advita DOCs.pdf p.12",
+      "Cim Authentication.pdf p.2"
+    ],
+    "answer": "No.  \nAccording to the **Advita DOCs.pdf** (p. 12), `GET /ebi/locations` returns *“All locations (excludes %-L by default)”* – the `-L` suffix marks loaner stock locations, so they are omitted from the default response.",
+    "elapsed_ms": 6951.4
+  },
+  {
+    "id": "Q13",
+    "doc": "FE",
+    "difficulty": "M",
+    "question": "What are the entry point flows for native versus web?",
+    "passed_all": false,
+    "pass_rate": 0.3333333333333333,
+    "must_contain": [
+      "RootViewController",
+      "Choreograph",
+      "web"
+    ],
+    "must_pass": [
+      false,
+      false,
+      true
+    ],
+    "chunks": [
+      "Cim Authentication.pdf p.4",
+      "Advita DOCs.pdf p.6",
+      "Cim Authentication.pdf p.2",
+      "Cim Authentication.pdf p.1"
+    ],
+    "answer": "**Entry‑point flows**\n\n| Type | How a request gets to the backend | Key credential header | Middleware that protects it |\n|------|------------------------------------|-----------------------|-----------------------------|\n| **Web (browser‑based)** | The client first does an interactive Azure AD OIDC **authorization‑code** flow (or PKCE). After the user signs in, the browser receives an **access‑token JWT** and attaches it to every subsequent API call. | `Authorization: Bearer <jwt issued by Azure AD>` | `requireAuthentication` (in ./src/middleware/authentication.ts) |\n| **Native (mobile/desktop)** | The app uses Azure AD’s **ROPC (Resource Owner Password Credentials)** grant to obtain an access‑token JWT without a browser redirect. The app sends the user’s credentials directly to the token endpoint, receives the JWT, and uses it for API calls. | `Authorization: Bearer <jwt issued by Azure AD>` | `requireAuthentication` |\n| **Machine‑to‑machine** | Service‑to‑service calls send a **Cimplicity API key**. | `Authorization: Cimplicity Bearer cim_<hex>`  **or**  `X‑API‑Key: cim_<hex>` | `requireApikey` (for routes that should only accept machine credentials) |\n\n**Summary**\n\n*All protected Express routes are wrapped with the `requireAuthentication` middleware (`./src/endpoints.ts`).*  \n- For a **web** client the entry point is the interactive Azure AD login that yields a JWT; the client then sends that JWT in the `Authorization` header.  \n- For a **native** client the entry point is the Azure AD **ROPC** grant, where the app exchanges the user’s username/password for a JWT and then sends that JWT in the same header.  \n\nThese two flows (interactive vs. ROPC) both hit the same backend entry point (`requireAuthentication`). The machine‑to‑machine flow, which is a separate use‑case, uses the `requireApikey` middleware and a Cimplicity API key header.",
+    "elapsed_ms": 9461.3
+  },
+  {
+    "id": "Q14",
+    "doc": "FE",
+    "difficulty": "E",
+    "question": "What are the steps to add a new screen?",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      "AppScreens",
+      "AppScreenProps"
+    ],
+    "must_pass": [
+      false,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.14",
+      "Cim Authentication.pdf p.4",
+      "Advita DOCs.pdf p.2",
+      "Advita DOCs.pdf p.6"
+    ],
+    "answer": "I’m sorry, but the provided documents don’t contain information about how to add a new screen.",
+    "elapsed_ms": 15369.3
+  },
+  {
+    "id": "Q15",
+    "doc": "FE",
+    "difficulty": "M",
+    "question": "How does platform-specific file resolution work?",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      ".web.tsx",
+      "priority"
+    ],
+    "must_pass": [
+      false,
+      false
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.14",
+      "Cim Authentication.pdf p.1",
+      "Advita DOCs.pdf p.2",
+      "Advita DOCs.pdf p.7"
+    ],
+    "answer": "**Platform‑specific file resolution**\n\nThe Cimplicity platform stores all file assets (stickersheet photos, billing documents, etc.) in **Azure Blob Storage**.  \nWhen a rep or team member requests a file, the following sequence resolves the file for that particular platform (web, iOS, API‑to‑API):\n\n| Step | What happens | Reference |\n|------|--------------|-----------|\n| 1. **Request** | The client (web, iOS, or a machine‑to‑machine service) sends an HTTP request for the file, attaching a token or API key in the `Authorization` header (or `X‑API‑Key` for pure machine clients). | *Cim Authentication.pdf p.1* |\n| 2. **Authentication & Authorization** | The backend verifies the bearer token against the Azure AD JWKS (or validates the Cimplicity API key). It hydrates the user record, evaluates the role/permission tree, and authorizes the request. | *Cim Authentication.pdf p.1* |\n| 3. **Permission Check** | The system checks that the authenticated rep or team has a role that permits access to the requested file. File access is scoped by the rep’s `ownerId` and agency. | *Advita DOCs.pdf p.2* |\n| 4. **Blob Path Resolution** | The backend maps the file’s logical identifier (e.g., `fileId`) to the corresponding Azure Blob Storage container and key, using the stored metadata (`File[]` in the `Order` model). | *Advita DOCs.pdf p.7* |\n| 5. **Secure URL Generation** | A **signed URL** (SAS token) or a streaming response is generated on the fly, ensuring the file is delivered only to the authorized user and for a limited time. | (Inferred from the combination of Azure Blob Storage usage and access control described in the file module) |\n| 6. **Delivery** | The client receives the signed URL or streamed content and renders/displays the file. | *Advita DOCs.pdf p.2* |\n\nThus, **platform‑specific file resolution** is essentially an authenticated request that the backend authorizes, resolves the file’s storage location in Azure Blob Storage, and provides secure, temporary access to the user—ensuring that only the correct rep/team can see the documents.",
+    "elapsed_ms": 9656.6
+  },
+  {
+    "id": "Q16",
+    "doc": "FE",
+    "difficulty": "M",
+    "question": "Which services live in the services layer, and how does a screen access one?",
+    "passed_all": false,
+    "pass_rate": 0.5,
+    "must_contain": [
+      "Context",
+      "Services"
+    ],
+    "must_pass": [
+      false,
+      true
+    ],
+    "chunks": [
+      "Advita DOCs.pdf p.7",
+      "Cim Authentication.pdf p.4",
+      "Cim Authentication.pdf p.8",
+      "Cim Authentication.pdf p.11"
+    ],
+    "answer": "I’m not sure. The provided documents don’t specify which services are in the services layer or how a screen would access them.",
+    "elapsed_ms": 11883.4
+  },
+  {
+    "id": "Q17",
+    "doc": "FE",
+    "difficulty": "E",
+    "question": "Which npm scripts run the web app, and what does each do?",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      "web:dev",
+      "web:prod",
+      "web:dist"
+    ],
+    "must_pass": [
+      false,
+      false,
+      false
+    ],
+    "chunks": [
+      "Cim Authentication.pdf p.5",
+      "Advita DOCs.pdf p.3",
+      "Cim Authentication.pdf p.11",
+      "Cim Authentication.pdf p.4"
+    ],
+    "answer": "I’m sorry, but the provided documents don’t contain any information about npm scripts that run the web app.",
+    "elapsed_ms": 6658.7
+  },
+  {
+    "id": "Q18",
+    "doc": "AUTH",
+    "difficulty": "M",
+    "question": "What are the three ways a request can authenticate?",
+    "passed_all": false,
+    "pass_rate": 0.0,
+    "must_contain": [
+      "requireAuthentication",
+      "requireApiKey",
+      "cim_"
+    ],
+    "must_pass": [
+      false,
+      false,
+      false
+    ],
+    "chunks": [
+      "Cim Authentication.pdf p.7",
+      "Cim Authentication.pdf p.5",
+      "Cim Authentication.pdf p.10",
+      "Cim Authentication.pdf p.4"
+    ],
+    "answer": "**Three authentication methods**\n\n| # | Method | How it’s used (in the code base) | Reference |\n|---|--------|----------------------------------|-----------|\n| 1 | **JWT Bearer token** – an OAuth2/OIDC access‑token is sent in the `Authorization` header (`Bearer <token>`). The middleware `verifyToken` in `./src/middleware/authentication.ts` validates it against the configured JWKS, audience and issuer. | Cim Authentication.pdf p.5 |\n| 2 | **API key** – a raw key is passed (typically in a header such as `X‑Api‑Key`), hashed with SHA‑256, and looked up by `keyHash`. If `isActive` and not expired, the request is authenticated as a synthetic super‑user. | Cim Authentication.pdf p.7 |\n| 3 | **Impersonation header** – an authenticated user can add an impersonation header (e.g., `X‑Impersonate‑User` or similar). The middleware records the call and re‑binds `req.user`/`req.userModel` to the target user. | Cim Authentication.pdf p.10 |\n\nThese three paths are the only ways a protected request can be authenticated in the current code‑base.",
+    "elapsed_ms": 5215.2
+  },
+  {
+    "id": "Q19",
+    "doc": "AUTH",
+    "difficulty": "M",
+    "question": "Walk through `verifyToken`.",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "cache",
+      "jwks",
+      "disableSecurityCheck"
+    ],
+    "must_pass": [
+      true,
+      true,
+      true
+    ],
+    "chunks": [
+      "Cim Authentication.pdf p.5",
+      "Advita DOCs.pdf p.11",
+      "Cim Authentication.pdf p.6",
+      "Advita DOCs.pdf p.12"
+    ],
+    "answer": "**Walkthrough of `verifyToken` (from `./src/middleware/authentication.ts`)**\n\n`verifyToken` is the core routine that authenticates a request by inspecting a bearer JWT and, if needed, creating a user record on‑the‑fly. The flow can be broken down into the following logical steps:\n\n1. **Extract the token**\n   * The middleware reads the `Authorization` header (`Bearer <token>`) and pulls out the raw JWT string.\n\n2. **Cache lookup (Redis)**\n   * Calls `getCachedJwtPayload(token)` (from `./src/middleware/jwtCache.ts`).\n   * The key is a SHA‑256 hash of the token; the value is the decoded payload.\n   * If a cached payload exists and its TTL has not expired, the function immediately returns that payload – no external verification is required.\n\n3. **JWKS verification (on a cache miss)**\n   * If the token isn’t in Redis, the middleware performs a full verification:\n     * Uses `jose.jwtVerify` against the JWKS endpoint configured in `config.oidc.jwksUrl`.\n     * Checks the `audience` (`config.oidc.jwtAudience`) and `issuer` (`config.oidc.jwtIssuer`).\n   * If `config.oidc.disableSecurityCheck` is set to `true` (only in dev), the signature, issuer, and audience checks are bypassed and the token is simply decoded.\n   * The verified (or decoded) payload is written back to Redis so subsequent requests can hit the cache.\n\n4. **Just‑in‑Time (JIT) User Provisioning**\n   * From the payload, the middleware pulls the user’s email (claim can be `email`, `unique_name`, or `preferred_username`).\n   * It looks up that email in the local `users` table.\n   * If no row exists, `createNewUser` is invoked inside a DB transaction:\n     1. **Agency** – Uses `config.defaultAgencyId` if defined, otherwise creates a new agency named “\\<FirstName\\> \\<LastName\\> Agency”.\n     2. **Role** – Uses `config.defaultRoleId` if defined, otherwise creates a new role named “Sales Rep” with a permission list (`resource.*.*` for owned resources) and level 6.\n     3. **User** – Inserts a new user row with the resolved `agencyId` and `roleId`.\n   * After provisioning (or if the user already existed), the middleware attaches the user record to the request context so downstream handlers can access `req.user`.\n\n5. **Return the authenticated user (or throw 401)**\n   * If any step fails (invalid token, cache error, database failure), the middleware responds with a `401 Unauthorized` status (see “401 Unauthorized” in the documentation).\n   * On success, `verifyToken` completes and the request continues to the next handler with a populated user object.\n\n**Key take‑aways**\n\n* The first check is a fast Redis lookup; only on a cache miss does it hit the JWKS endpoint.\n* JIT provisioning ensures that every authenticated Azure AD user automatically receives a usable identity in the system.\n* Production environments must keep `config.oidc.disableSecurityCheck` set to `false` to enforce signature/audience/issuer validation.",
+    "elapsed_ms": 17871.5
+  },
+  {
+    "id": "Q20",
+    "doc": "AUTH",
+    "difficulty": "H",
+    "question": "Do API keys go through the permission system?",
+    "passed_all": true,
+    "pass_rate": 1.0,
+    "must_contain": [
+      "bypass",
+      "superuser"
+    ],
+    "must_pass": [
+      true,
+      true
+    ],
+    "chunks": [
+      "Cim Authentication.pdf p.7",
+      "Cim Authentication.pdf p.9",
+      "Cim Authentication.pdf p.7",
+      "Cim Authentication.pdf p.4"
+    ],
+    "answer": "No – API keys are exempt from the normal permission checks.  \nAccording to the documentation, API‑key‑authenticated requests are bound to a synthetic system user that “hasPermission: async () => true // full access” and the warning explicitly states that *API keys bypass the permission system and act as a superuser*. (Cim Authentication.pdf, p. 7)",
+    "elapsed_ms": 10693.0
+  }
+]

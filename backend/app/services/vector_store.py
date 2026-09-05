@@ -50,6 +50,7 @@ def query(question: str, top_k: int | None = None) -> list[dict]:
     dists = results.get("distances") or [[]]
 
     for cid, text, meta, dist in zip(ids[0], docs[0], metas[0], dists[0]):
+        meta = meta or {}
         matches.append(
             {
                 "id": cid,
