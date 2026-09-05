@@ -3,10 +3,11 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, UploadFile
 
-from app.api.schemas import DocumentInfo, UploadResponse
+from app.api.schemas import ChunkInfo, DocumentInfo, UploadResponse
 from app.core.config import settings
 from app.services import retriever, vector_store
 from app.services.ingest import ingest_pdf
+
 
 router = APIRouter()
 
@@ -40,6 +41,12 @@ async def upload_document(file: UploadFile):
 @router.get("/documents", response_model=list[DocumentInfo])
 async def get_documents():
     return vector_store.list_documents()
+
+
+@router.get("/chunks", response_model=list[ChunkInfo])
+async def get_chunks(doc_id: str | None = None):
+    return vector_store.get_chunks(doc_id=doc_id)
+
 
 
 @router.delete("/documents/{doc_id}")

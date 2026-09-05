@@ -25,11 +25,13 @@ def add_chunks(doc_id: str, filename: str, chunks: list[dict]) -> int:
     ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
     documents = [c["text"] for c in chunks]
     metadatas = [
-        {"doc_id": doc_id, "filename": filename, "page": c["page"]} for c in chunks
+        {"doc_id": doc_id, "filename": filename, "page": c["page"], "chunk_index": i}
+        for i, c in enumerate(chunks)
     ]
 
     _collection.add(ids=ids, documents=documents, metadatas=metadatas)
     return len(chunks)
+
 
 
 def query(question: str, top_k: int | None = None) -> list[dict]:
@@ -83,6 +85,55 @@ def get_all_chunks() -> list[dict]:
             }
         )
     return records
+
+
+def get_chunks(doc_id: str | None = None) -> list[dict]:
+    """Fetch chunks with metadata, optionally filtered by doc_id."""
+    where = {"doc_id": doc_id} if doc_id else None
+    if where:
+        data = _collection.get(where=where, include=["documents", "metadatas"])
+    else:
+        data = _collection.get(include=["documents", "metadatas"])
+
+    ids = data.get("ids") or []
+    docs = data.get("documents") or []
+    metas = data.get("metadatas") or []
+
+    records = []
+    for cid, text, meta in zip(ids, docs, metas):
+        meta = meta or {}
+        chunk_idx = meta.get("chunk_index")
+        if chunk_idx is None and "_" in cid:
+            try:
+                chunk_idx = int(cid.rsplit("_", 1)[-1])
+            except (ValueError, IndexError):
+                chunk_idx = 0
+        elif chunk_idx is None:
+            chunk_idx = 0
+
+        text_str = text or ""
+        records.append(
+            {
+                "id": cid,
+                "doc_id": meta.get("doc_id") or "",
+                "filename": meta.get("filename") or "Unknown Document",
+                "page": meta.get("page"),
+                "chunk_index": int(chunk_idx),
+                "text": text_str,
+                "word_count": len(text_str.split()),
+                "char_count": len(text_str),
+            }
+        )
+
+    records.sort(
+        key=lambda r: (
+            r["filename"].lower(),
+            r["chunk_index"],
+            r["page"] if r["page"] is not None else 0,
+        )
+    )
+    return records
+
 
 
 def get_embeddings(ids: list[str]) -> dict[str, list[float]]:

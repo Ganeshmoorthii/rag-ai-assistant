@@ -1,4 +1,4 @@
-from .documents import DocumentInfo, UploadResponse
+from .documents import ChunkInfo, DocumentInfo, UploadResponse
 from .evaluation import (
     EvalRequest,
     EvalResponse,
@@ -9,6 +9,7 @@ from .evaluation import (
 from .query import QueryRequest, QueryResponse, SourceChunk
 
 __all__ = [
+    "ChunkInfo",
     "DocumentInfo",
     "EvalRequest",
     "EvalResponse",
@@ -20,3 +21,4 @@ __all__ = [
     "TriageResponse",
     "UploadResponse",
 ]
+

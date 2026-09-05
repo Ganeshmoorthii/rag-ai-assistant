@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ChatPanel from './components/ChatPanel'
+import ChunksPanel from './components/ChunksPanel'
 import DocumentPanel from './components/DocumentPanel'
 import EvalPanel from './components/EvalPanel'
 import InspectorPanel from './components/InspectorPanel'
@@ -10,10 +11,19 @@ const TABS = [
   ['chat', 'Chat'],
   ['inspect', 'Retrieval Inspector'],
   ['eval', 'Measurement'],
+  ['chunks', 'Document Chunks'],
 ]
 
 export default function App() {
-  const [tab, setTab] = useState('inspect')
+  const [tab, setTab] = useState('chunks')
+  const [selectedDocId, setSelectedDocId] = useState(null)
+  const [docRefreshKey, setDocRefreshKey] = useState(0)
+
+  function handleViewChunks(docId) {
+    setSelectedDocId(docId)
+    setTab('chunks')
+  }
+
 
   return (
     <div className="min-h-screen bg-[#08111F] text-slate-100">
@@ -47,7 +57,12 @@ export default function App() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setTab(key)}
+                onClick={() => {
+                  setTab(key)
+                  if (key !== 'chunks') {
+                    setSelectedDocId(null)
+                  }
+                }}
                 className={cn('nav-tab', tab === key && 'active')}
               >
                 {label}
@@ -60,14 +75,22 @@ export default function App() {
         <main className="flex-1 px-8 py-6">
           {tab === 'chat' && (
             <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-              <DocumentPanel />
+              <DocumentPanel
+                onViewChunks={handleViewChunks}
+                selectedDocId={selectedDocId}
+                onDocumentsChange={() => setDocRefreshKey((k) => k + 1)}
+              />
               <ChatPanel />
             </div>
           )}
 
           {tab === 'inspect' && (
             <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-              <DocumentPanel />
+              <DocumentPanel
+                onViewChunks={handleViewChunks}
+                selectedDocId={selectedDocId}
+                onDocumentsChange={() => setDocRefreshKey((k) => k + 1)}
+              />
               <InspectorPanel />
             </div>
           )}
@@ -77,8 +100,21 @@ export default function App() {
               <EvalPanel />
             </div>
           )}
+
+          {tab === 'chunks' && (
+            <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+              <DocumentPanel
+                onViewChunks={handleViewChunks}
+                selectedDocId={selectedDocId}
+                onDocumentsChange={() => setDocRefreshKey((k) => k + 1)}
+              />
+              <ChunksPanel initialDocId={selectedDocId} refreshKey={docRefreshKey} />
+            </div>
+          )}
         </main>
+
       </div>
     </div>
   )
 }
+

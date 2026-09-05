@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { uploadDocument, listDocuments, deleteDocument } from '../api'
 import { cn } from '../lib/utils'
-import { IconUpload, IconFile, IconTrash, IconInbox, IconLoader } from './icons'
+import { IconUpload, IconFile, IconTrash, IconInbox, IconLoader, IconEye } from './icons'
 
-export default function DocumentPanel() {
+export default function DocumentPanel({
+  onViewChunks = null,
+  selectedDocId = null,
+  onDocumentsChange = null,
+}) {
   const [documents, setDocuments] = useState([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
@@ -12,7 +16,9 @@ export default function DocumentPanel() {
 
   async function refresh() {
     try {
-      setDocuments(await listDocuments())
+      const docs = await listDocuments()
+      setDocuments(docs)
+      onDocumentsChange?.(docs)
     } catch (e) {
       setError(e.message)
     }
@@ -140,7 +146,12 @@ export default function DocumentPanel() {
               documents.map((doc) => (
                 <div
                   key={doc.doc_id}
-                  className="group rounded-lg border border-slate-700/40 bg-slate-950/50 hover:bg-slate-900/70 hover:border-slate-600/60 p-3 transition-all duration-200"
+                  className={cn(
+                    'group rounded-lg border p-3 transition-all duration-200',
+                    selectedDocId === doc.doc_id
+                      ? 'border-blue-500/60 bg-blue-500/10'
+                      : 'border-slate-700/40 bg-slate-950/50 hover:bg-slate-900/70 hover:border-slate-600/60'
+                  )}
                 >
                   <div className="flex items-start gap-3">
                     <IconFile width={16} height={16} className="text-slate-400 mt-0.5 shrink-0" />
@@ -149,15 +160,28 @@ export default function DocumentPanel() {
                         {doc.filename}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-500/30">
-                          {doc.chunks} chunks
-                        </span>
+                        {onViewChunks ? (
+                          <button
+                            type="button"
+                            onClick={() => onViewChunks(doc.doc_id)}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-500/30 border border-blue-500/30 transition-colors"
+                            title="View chunks in Document Chunks tab"
+                          >
+                            <span>{doc.chunks} chunks</span>
+                            <IconEye width={11} height={11} className="text-blue-300" />
+                          </button>
+                        ) : (
+                          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-500/30">
+                            {doc.chunks} chunks
+                          </span>
+                        )}
                         <span className="inline-flex items-center gap-1 text-xs text-green-300">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                           Indexed
                         </span>
                       </div>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => handleDelete(doc.doc_id)}

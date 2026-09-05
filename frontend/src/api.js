@@ -24,6 +24,14 @@ export async function deleteDocument(docId) {
   return res.json()
 }
 
+export async function listChunks(docId = null) {
+  const url = docId ? `${BASE_URL}/chunks?doc_id=${encodeURIComponent(docId)}` : `${BASE_URL}/chunks`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to load chunks')
+  return res.json()
+}
+
+
 /**
  * Ask a question. `options` carries the per-request strategy overrides so the
  * inspection UI can flip hybrid/rerank/rewrite without restarting the server.
