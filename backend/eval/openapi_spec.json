@@ -1,0 +1,196 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Advita / Cimplicity Developer Documentation API",
+    "version": "3.0.0",
+    "description": "API specification for Advita DOCs, Cimplicity Authentication, and EBI Services."
+  },
+  "paths": {
+    "/api/revenue": {
+      "get": {
+        "summary": "Fetch monthly revenue analytics",
+        "parameters": [
+          { "name": "month", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "agencyId", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Revenue analytics records" },
+          "401": { "description": "Unauthorized - Missing or invalid bearer token" },
+          "403": { "description": "Forbidden - Insufficient permissions" }
+        }
+      }
+    },
+    "/api/v1/impersonate": {
+      "post": {
+        "summary": "User Impersonation endpoint",
+        "description": "Allows administrative users with impersonate permission to assume another identity.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId"],
+                "properties": {
+                  "userId": { "type": "string" },
+                  "reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Impersonation session token" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - Non-admin user" }
+        }
+      }
+    },
+    "/orders/verification": {
+      "post": {
+        "summary": "Stickersheet AI Verification endpoint",
+        "description": "Sends surgical stickersheet image to Vision/Gemini to verify billed serial numbers.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderId", "fileId"],
+                "properties": {
+                  "orderId": { "type": "string" },
+                  "fileId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Verification status: COMPLETED or discrepancy logged" }
+        }
+      }
+    },
+    "/ebi/backorders": {
+      "get": {
+        "summary": "Fetch backordered items from SAP EBI",
+        "parameters": [
+          { "name": "agencyId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "includeDrafts", "in": "query", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "List of backorders" }
+        }
+      }
+    },
+    "/ebi/locations": {
+      "get": {
+        "summary": "List warehouse and hospital consignment locations",
+        "responses": {
+          "200": { "description": "Locations list" }
+        }
+      }
+    },
+    "/ebi/updateOrder": {
+      "post": {
+        "summary": "Sync order update to QAD ERP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderId", "inQad"],
+                "properties": {
+                  "orderId": { "type": "string" },
+                  "inQad": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Order update status" }
+        }
+      }
+    },
+    "/api/inventory/reconcile": {
+      "post": {
+        "summary": "Reconcile restockMax inventory levels",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["itemNumber", "agencyCode", "quantity"],
+                "properties": {
+                  "itemNumber": { "type": "string" },
+                  "agencyCode": { "type": "string" },
+                  "quantity": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Reconciliation result and calculationTrail" }
+        }
+      }
+    },
+    "/api/orders/{id}/po": {
+      "put": {
+        "summary": "Update purchase order number on order",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["poNumber"],
+                "properties": {
+                  "poNumber": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "PO updated" }
+        }
+      }
+    },
+    "/api/v1/auth/token": {
+      "post": {
+        "summary": "Acquire Bearer Token",
+        "responses": {
+          "200": { "description": "Access token" }
+        }
+      }
+    },
+    "/api/v2/orders": {
+      "get": {
+        "summary": "List orders with filters",
+        "responses": {
+          "200": { "description": "List of orders" }
+        }
+      },
+      "post": {
+        "summary": "Create order",
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    }
+  }
+}
