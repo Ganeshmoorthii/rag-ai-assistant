@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { askQuestion, getGoldenSet, getRetrievalSettings, triage } from '../api'
 import {
   IconPlay,
@@ -521,7 +522,18 @@ export default function InspectorPanel() {
                   {result.answer ? (
                     <>
                       <div className="text-sm leading-relaxed text-slate-100 markdown-body">
-                        <Markdown>{result.answer}</Markdown>
+                        <Markdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({ node, ...props }) => (
+                              <div className="overflow-x-auto my-3 rounded-lg border border-slate-700/50">
+                                <table className="w-full text-xs border-collapse" {...props} />
+                              </div>
+                            ),
+                          }}
+                        >
+                          {result.answer}
+                        </Markdown>
                       </div>
 
                       <div className="border-t border-slate-700/30 pt-4">

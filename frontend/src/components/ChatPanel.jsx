@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { askQuestion } from '../api'
 import { IconMessage, IconLoader } from './icons'
 
@@ -59,17 +60,28 @@ export default function ChatPanel() {
                 <div key={i} className="space-y-2">
                   <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                      className={`px-4 py-3 rounded-lg ${
                         m.role === 'user'
-                          ? 'bg-blue-500/20 text-blue-100 rounded-br-none'
+                          ? 'max-w-xs lg:max-w-md bg-blue-500/20 text-blue-100 rounded-br-none'
                           : m.role === 'error'
-                            ? 'bg-red-500/20 text-red-100 rounded-bl-none'
-                            : 'bg-slate-700/40 text-slate-100 rounded-bl-none'
+                            ? 'max-w-xs lg:max-w-md bg-red-500/20 text-red-100 rounded-bl-none'
+                            : 'max-w-xl lg:max-w-2xl xl:max-w-3xl bg-slate-700/40 text-slate-100 rounded-bl-none'
                       }`}
                     >
                       {m.role === 'assistant' ? (
                         <div className="text-sm leading-relaxed markdown-body">
-                          <Markdown>{m.text}</Markdown>
+                          <Markdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              table: ({ node, ...props }) => (
+                                <div className="overflow-x-auto my-3 rounded-lg border border-slate-700/50">
+                                  <table className="w-full text-xs border-collapse" {...props} />
+                                </div>
+                              ),
+                            }}
+                          >
+                            {m.text}
+                          </Markdown>
                         </div>
                       ) : (
                         <p className="text-sm leading-relaxed">{m.text}</p>
@@ -78,7 +90,7 @@ export default function ChatPanel() {
                   </div>
 
                   {m.sources && m.sources.length > 0 && (
-                    <div className="ml-0 mr-auto max-w-xs lg:max-w-md">
+                    <div className="ml-0 mr-auto max-w-xl lg:max-w-2xl xl:max-w-3xl">
                       <details className="text-xs">
                         <summary className="cursor-pointer text-slate-400 hover:text-slate-300 font-medium">
                           {m.sources.length} source{m.sources.length !== 1 ? 's' : ''}

@@ -369,16 +369,20 @@ textarea {
 }
 
 .markdown-body table {
-  @apply w-full text-xs border-collapse mb-3;
+  @apply w-full text-xs border-collapse;
 }
 
 .markdown-body th,
 .markdown-body td {
-  @apply border border-slate-700/50 px-2 py-1 text-left;
+  @apply border border-slate-700/60 px-3 py-2 text-left align-top;
 }
 
 .markdown-body th {
-  @apply bg-slate-800/50 text-slate-300;
+  @apply bg-slate-800/80 text-slate-200 font-semibold tracking-wide;
+}
+
+.markdown-body tr:nth-child(even) {
+  @apply bg-slate-800/30;
 }
 
 .markdown-body hr {
