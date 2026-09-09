@@ -32,6 +32,7 @@ export default function InspectorPanel() {
     rewrite: false,
     mmr: false,
     hyde: false,
+    use_graph: true,
   })
   const [topK, setTopK] = useState(3)
   const [candidateK, setCandidateK] = useState(20)
@@ -233,6 +234,7 @@ export default function InspectorPanel() {
         <div className="card-content space-y-4">
           <div className="flex flex-wrap gap-2">
             {[
+              ['use_graph', 'LangGraph Agentic Flow'],
               ['hybrid', 'Hybrid Search'],
               ['rerank', 'Rerank'],
               ['rewrite', 'Query Rewrite'],
@@ -627,12 +629,35 @@ export default function InspectorPanel() {
                       <div className="text-xs font-semibold text-slate-300">Pipeline Stages</div>
                       {trace.stages.map((st, idx) => (
                         <div key={idx} className="p-3 bg-slate-950/40 rounded font-mono text-xs space-y-1">
-                          <div className="text-blue-300 font-semibold capitalize">{st.stage}</div>
+                          <div className="text-blue-300 font-semibold capitalize">{st.stage.replace(/_/g, ' ')}</div>
                           {st.skipped && (
                             <div className="text-amber-300">Skipped — {st.reason}</div>
                           )}
                           {st.returned != null && (
                             <div className="text-slate-300">Returned: {st.returned}</div>
+                          )}
+                          {st.stage === 'graph_route' && (
+                            <div className="text-slate-300 space-y-1">
+                              <div>Query Route: <span className="text-emerald-300 font-bold">{st.route}</span></div>
+                              <div>Code/ID Detected: {String(st.has_exact_identifier)}</div>
+                            </div>
+                          )}
+                          {st.stage === 'graph_grade_documents' && (
+                            <div className="text-slate-300 space-y-1">
+                              <div>Context Relevant: <span className={st.relevant ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>{String(st.relevant)}</span></div>
+                              {st.reason && <div>Reason: {st.reason}</div>}
+                            </div>
+                          )}
+                          {st.stage === 'graph_self_correction_rewrite' && (
+                            <div className="text-amber-300 space-y-1">
+                              <div>Self-Correction Retry #{st.retry_count}</div>
+                              <div>Rewritten probe: <span className="text-slate-200">{st.after}</span></div>
+                            </div>
+                          )}
+                          {st.stage === 'graph_grade_generation' && (
+                            <div className="text-slate-300 space-y-1">
+                              <div>Groundedness Grade: <span className="text-emerald-400 font-bold">{st.hallucination_grade}</span></div>
+                            </div>
                           )}
                           {st.stage === 'rrf_fusion' && (
                             <div className="text-slate-300 space-y-1">

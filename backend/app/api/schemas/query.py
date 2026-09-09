@@ -12,6 +12,7 @@ class QueryRequest(BaseModel):
     mmr: bool | None = None
     hyde: bool = False
     retrieval_only: bool = False
+    use_graph: bool | None = None
 
 
 class SourceChunk(BaseModel):

@@ -92,3 +92,44 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
         answer=answer,
     )
     return answer
+
+
+async def call_llm_text(
+    system_prompt: str,
+    user_prompt: str,
+    max_tokens: int = 512,
+    temperature: float = 0.0,
+) -> str:
+    """Generic text completion helper used by LangGraph grading nodes."""
+    if not settings.llm_api_key:
+        key_name = "OPENROUTER_API_KEY" if settings.openrouter_enabled else "GROQ_API_KEY"
+        raise RuntimeError(f"{key_name} is not set. Add it to backend/.env")
+
+    payload = {
+        "model": settings.llm_model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.llm_api_key}",
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=45) as client:
+        resp = await client.post(settings.llm_url, json=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+
+    choices = data.get("choices")
+    if not choices:
+        error = data.get("error", {})
+        message = error.get("message") if isinstance(error, dict) else None
+        raise RuntimeError(
+            f"{settings.llm_provider} returned no choices: {message or data}"
+        )
+
+    return choices[0]["message"]["content"].strip()

@@ -79,6 +79,11 @@ CONFIGS: dict[str, dict] = {
         "hybrid": True, "rerank": True, "rewrite": True, "mmr": True,
         "_desc": "All strategies on — a ceiling check, NOT a valid single change",
     },
+    "langgraph": {
+        "hybrid": True, "rerank": True, "rewrite": False, "mmr": False,
+        "_use_graph": True,
+        "_desc": "LangGraph Agentic RAG with query routing, self-correction, and evaluation",
+    },
 }
 
 K_VALUES = [1, 3, 5]
@@ -101,13 +106,18 @@ async def run_config(
         )
 
     cfg = {k: v for k, v in CONFIGS[name].items() if not k.startswith("_")}
+    use_graph = CONFIGS[name].get("_use_graph", False)
     rows = []
 
     for q in questions:
         if only_question and q["id"] != only_question:
             continue
 
-        result = await retriever.retrieve(q["question"], top_k=top_k, **cfg)
+        if use_graph:
+            from app.services import graph_rag
+            result = await graph_rag.run_rag_graph(q["question"], top_k=top_k, **cfg)
+        else:
+            result = await retriever.retrieve(q["question"], top_k=top_k, **cfg)
         chunks = result["chunks"]
 
         rank = metrics.first_hit_rank(chunks, q["expected"])

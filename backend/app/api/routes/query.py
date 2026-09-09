@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.llm_client import generate_answer
 from app.services.trace_logger import log_interaction_trace
-from app.services import retriever
+from app.services import graph_rag, retriever
 
 router = APIRouter()
 
@@ -23,7 +23,54 @@ async def query_documents(payload: QueryRequest):
         mmr=payload.mmr,
         hyde=payload.hyde,
         retrieval_only=payload.retrieval_only,
+        use_graph=payload.use_graph,
     )
+
+    use_graph = (
+        payload.use_graph
+        if payload.use_graph is not None
+        else settings.use_langgraph
+    )
+    if use_graph:
+        flow_log("graph.execution.started", question=payload.question)
+        graph_result = await graph_rag.run_rag_graph(
+            question=payload.question,
+            top_k=payload.top_k,
+            hybrid=payload.hybrid,
+            rerank=payload.rerank,
+            rewrite=payload.rewrite,
+            mmr=payload.mmr,
+            hyde=payload.hyde,
+            retrieval_only=payload.retrieval_only,
+        )
+        matches = graph_result["chunks"]
+        answer = graph_result["answer"]
+        trace = graph_result["trace"]
+
+        resolved_config = {
+            "top_k": payload.top_k or settings.top_k,
+            "hybrid": payload.hybrid if payload.hybrid is not None else settings.hybrid_enabled,
+            "rerank": payload.rerank if payload.rerank is not None else settings.rerank_enabled,
+            "rewrite": payload.rewrite if payload.rewrite is not None else settings.rewrite_enabled,
+            "mmr": payload.mmr if payload.mmr is not None else settings.mmr_enabled,
+            "hyde": payload.hyde,
+            "retrieval_only": payload.retrieval_only,
+            "use_graph": True,
+        }
+
+        flow_log("response.completed", answer=answer, sources=matches)
+        tr = log_interaction_trace(
+            question=payload.question,
+            chunks=matches,
+            answer=answer,
+            trace_info=trace,
+            config=resolved_config,
+        )
+        if tr:
+            trace["trace_id"] = tr["trace_id"]
+
+        return QueryResponse(answer=answer, sources=matches, trace=trace)
+
     result = await retriever.retrieve(
         payload.question,
         top_k=payload.top_k,

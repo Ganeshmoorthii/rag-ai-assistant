@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     mmr_enabled: bool = False
     mmr_lambda: float = 0.7  # 1.0 = pure relevance, 0.0 = pure diversity
 
+    # --- LangGraph Agentic RAG settings -----------------------------------
+    use_langgraph: bool = True
+    graph_max_retries: int = 1
+    grade_documents: bool = True
+    grade_hallucinations: bool = True
+
     @property
     def llm_api_key(self) -> str:
         return self.openrouter_api_key if self.openrouter_enabled else self.groq_api_key
