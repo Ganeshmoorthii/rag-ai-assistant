@@ -1,0 +1,91 @@
+{
+  "_readme": [
+    "Week 7 Practical Benchmark Suite — 10 Developer Documentation Migration Questions",
+    "Includes 3 dynamic branching cases where Step 3 dynamically depends on Step 2 findings:",
+    "  - Q1: Endpoint replacement lookup (/api/v2/orders -> /orders/verification & /api/orders/{id}/po)",
+    "  - Q2: Deprecated AuthClient constructor (apiKey -> tokenProvider + tenantId)",
+    "  - Q3: Deprecated function signature (getBackorders(agencyId) -> { agencyId, includeDrafts })"
+  ],
+  "questions": [
+    {
+      "id": "w7_q01",
+      "category": "dynamic_branching_endpoint_replacement",
+      "question": "How do I migrate calls from the deprecated `/api/v2/orders` endpoint in v3, and what replacement endpoints are used for stickersheet verification and updating purchase order numbers?",
+      "required_version": "v3",
+      "is_dynamic_branching": true,
+      "must_contain": ["v3", "deprecated", "/orders/verification", "/api/orders/"]
+    },
+    {
+      "id": "w7_q02",
+      "category": "dynamic_branching_auth_constructor",
+      "question": "How do I initialize the Cimplicity `AuthClient` in SDK v3, and why does `apiKey` no longer work?",
+      "required_version": "v3",
+      "is_dynamic_branching": true,
+      "must_contain": ["v3", "AuthClient", "tokenProvider", "tenantId"]
+    },
+    {
+      "id": "w7_q03",
+      "category": "dynamic_branching_method_signature",
+      "question": "How do I call `getBackorders()` in SDK v3, and what parameter replaces the legacy positional `agencyId`?",
+      "required_version": "v3",
+      "is_dynamic_branching": true,
+      "must_contain": ["v3", "getBackorders", "includeDrafts"]
+    },
+    {
+      "id": "w7_q04",
+      "category": "header_migration",
+      "question": "What HTTP headers and body properties are required to call `POST /api/v1/impersonate` in v3?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "Bearer", "userId"]
+    },
+    {
+      "id": "w7_q05",
+      "category": "schema_migration",
+      "question": "How do I reconcile RestockMax inventory levels in API v3, and what payload parameters are expected by `/api/inventory/reconcile`?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "/api/inventory/reconcile", "itemNumber", "agencyCode", "quantity"]
+    },
+    {
+      "id": "w7_q06",
+      "category": "verification_endpoint",
+      "question": "Which endpoint powers stickersheet AI verification in v3, and what payload fields must be submitted?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "/orders/verification", "orderId", "fileId"]
+    },
+    {
+      "id": "w7_q07",
+      "category": "query_parameters",
+      "question": "Which endpoint fetches backordered items from SAP EBI in API v3, and what query parameter is required?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "/ebi/backorders", "agencyId"]
+    },
+    {
+      "id": "w7_q08",
+      "category": "auth_middleware_migration",
+      "question": "Is `requireApiKey` allowed in v3, or has it been deprecated in favor of JWT Bearer authentication?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "deprecated", "verifyToken", "Bearer"]
+    },
+    {
+      "id": "w7_q09",
+      "category": "status_code_semantics",
+      "question": "In Cimplicity auth v3, under what specific conditions does the API return 401 Unauthorized versus 403 Forbidden?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "401", "403"]
+    },
+    {
+      "id": "w7_q10",
+      "category": "inventory_rule",
+      "question": "In Advita inventory documentation, what does a consignment location suffix ending in `-L` signify for restocking approval in v3?",
+      "required_version": "v3",
+      "is_dynamic_branching": false,
+      "must_contain": ["v3", "-L", "loaner", "approval"]
+    }
+  ]
+}

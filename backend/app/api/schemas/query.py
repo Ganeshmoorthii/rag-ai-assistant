@@ -13,6 +13,7 @@ class QueryRequest(BaseModel):
     hyde: bool = False
     retrieval_only: bool = False
     use_graph: bool | None = None
+    use_agent: bool = False
 
 
 class SourceChunk(BaseModel):
@@ -32,3 +33,4 @@ class QueryResponse(BaseModel):
     answer: str
     sources: list[SourceChunk]
     trace: dict[str, Any] | None = None
+    agent_execution: dict[str, Any] | None = None

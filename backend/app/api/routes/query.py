@@ -24,7 +24,34 @@ async def query_documents(payload: QueryRequest):
         hyde=payload.hyde,
         retrieval_only=payload.retrieval_only,
         use_graph=payload.use_graph,
+        use_agent=payload.use_agent,
     )
+
+    if payload.use_agent:
+        from app.services.docs_agent import run_docs_agent
+        flow_log("agent.route.started", question=payload.question)
+        agent_out = await run_docs_agent(payload.question)
+        answer = agent_out.get("answer", "")
+        flow_log("agent.route.completed", laps=agent_out.get("lap_count", 1), total_tokens=agent_out.get("total_tokens", 0))
+        return QueryResponse(
+            answer=answer,
+            sources=[],
+            trace={
+                "strategy": "Docs Agent Loop (Week 7)",
+                "timings_ms": {"total": agent_out.get("wall_clock_seconds", 0.0) * 1000},
+            },
+            agent_execution={
+                "mode": "Docs Agent Loop (Week 7)",
+                "lap_count": agent_out.get("lap_count", 1),
+                "tools_called": agent_out.get("tools_called", []),
+                "total_tokens": agent_out.get("total_tokens", 0),
+                "total_cost": agent_out.get("total_cost", 0.0),
+                "wall_clock_seconds": agent_out.get("wall_clock_seconds", 0.0),
+                "budget_fired": agent_out.get("budget_fired"),
+                "budget_exceeded": agent_out.get("budget_exceeded", False),
+                "lap_traces": agent_out.get("lap_traces", []),
+            },
+        )
 
     use_graph = (
         payload.use_graph

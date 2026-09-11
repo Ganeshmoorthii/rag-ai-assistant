@@ -1,0 +1,31 @@
+=== WEEK 7 BUDGET TERMINATION LOG EXCERPT ===
+
+Test Question: How do I migrate calls from the deprecated `/api/v2/orders` endpoint in v3?
+
+--- Budget Test 1: MAX_ITERS Termination ---
+Budget Limit: max_iters=1
+Budget Fired: MAX_ITERS
+Budget Exceeded: True
+Laps Completed: 1
+Total Tokens: 1133
+Total Cost: $0.000461
+Wall Clock: 48.495s
+Termination Output Message:
+[TERMINATED_EARLY] Agent budget 'MAX_ITERS' fired at lap 1 (total tokens: 1133, cost: $0.00046, wall-clock: 48.495s). Loop halted cleanly to prevent runaway execution.
+
+--- Budget Test 2: MAX_WALL_CLOCK Termination ---
+Budget Limit: max_wall_clock_seconds=0.001s
+Budget Fired: MAX_WALL_CLOCK
+Budget Exceeded: True
+Wall Clock: 0.827s
+Termination Output Message:
+[TERMINATED_EARLY] Agent budget 'MAX_WALL_CLOCK' fired at lap 1 (total tokens: 1133, cost: $0.00046, wall-clock: 0.827s). Loop halted cleanly to prevent runaway execution.
+
+--- Budget Test 3: MAX_TOKENS Termination ---
+Budget Limit: max_tokens=100
+Budget Fired: MAX_TOKENS
+Budget Exceeded: True
+Termination Output Message:
+[TERMINATED_EARLY] Agent budget 'MAX_TOKENS' fired at lap 1 (total tokens: 1133, cost: $0.00046, wall-clock: 1.197s). Loop halted cleanly to prevent runaway execution.
+
+CONCLUSION: All four budgets (max_iters, max_tokens, max_cost, max_wall_clock) are actively checked every loop iteration before and after LLM invocations. Upon breaching any budget, the loop cleanly halts immediately without spinning.

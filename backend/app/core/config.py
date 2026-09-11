@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,9 +12,9 @@ class Settings(BaseSettings):
 
     embedding_model: str = "all-MiniLM-L6-v2"
 
-    chroma_dir: str = "./data/chroma"
-    upload_dir: str = "./data/uploads"
-    traces_path: str = "./data/traces.jsonl"
+    chroma_dir: str = "backend/data/chroma" if os.path.exists("backend/data/chroma") else "./data/chroma"
+    upload_dir: str = "backend/data/uploads" if os.path.exists("backend/data/uploads") else "./data/uploads"
+    traces_path: str = "backend/data/traces.jsonl" if os.path.exists("backend/data") else "./data/traces.jsonl"
     trace_logging_enabled: bool = True
 
     chunk_size: int = 1000
@@ -72,7 +74,11 @@ class Settings(BaseSettings):
     def llm_provider(self) -> str:
         return "OpenRouter" if self.openrouter_enabled else "Groq"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=(".env", "backend/.env", os.path.join(os.path.dirname(__file__), "..", "..", ".env")),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 settings = Settings()

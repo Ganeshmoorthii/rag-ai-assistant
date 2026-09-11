@@ -1,0 +1,3 @@
+system,pass_rate_pct,p50_latency_seconds,total_tokens,cost_per_question_usd
+Docs Agent (Loop),40.0%,45.594,57075,$0.002301
+Fixed Workflow (No Loop),80.0%,2.497,8818,$0.000533

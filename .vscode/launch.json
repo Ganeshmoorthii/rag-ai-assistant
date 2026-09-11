@@ -4,9 +4,10 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
 
         {
-            "name": "Python Debugger: FastAPI",
+            "name": "Backend: FastAPI",
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
@@ -16,15 +17,46 @@
                 "--port",
                 "8000"
             ],
-            // uvicorn resolves "app.main:app" relative to the working
-            // directory, so this must be backend/ or the import fails.
             "cwd": "${workspaceFolder}/backend",
-            "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
-            // --reload spawns a child process; without this, breakpoints
-            // only bind in the parent and never hit.
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "subProcess": true,
             "console": "integratedTerminal",
             "jinja": true
+        },
+        {
+            "name": "Frontend: Vite",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend",
+            "sourceMaps": true
+        },
+        {
+            "name": "Frontend: Vite server",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev"
+            ],
+            "cwd": "${workspaceFolder}/frontend",
+            "console": "integratedTerminal",
+            "serverReadyAction": {
+                "pattern": "Local:\\s+(https?://\\S+)",
+                "uriFormat": "%s",
+                "action": "debugWithChrome"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full stack: FastAPI + Vite",
+            "configurations": [
+                "Backend: FastAPI",
+                "Frontend: Vite server"
+            ],
+            "stopAll": true
         }
     ]
 }
