@@ -32,20 +32,36 @@ DEFAULT_MAX_WALL_CLOCK_SECONDS = 120.0
 
 SYSTEM_PROMPT = """You are an expert Developer Documentation & SDK Migration Agent.
 Your job is to answer API and SDK migration questions (e.g., migrating from v2 to v3).
+
 You have access to 3 specialized tools:
 1. `search_docs(query)`: Search developer guides, manuals, and PDFs for concepts, tutorials, and explanations.
 2. `get_openapi_spec(endpoint_path)`: Fetch the OpenAPI 3.0 specification for an HTTP endpoint schema.
 3. `check_deprecation(symbol_or_endpoint, api_version)`: Verify if a method/symbol/endpoint is deprecated in target version (v1, v2, v3) and get replacement details.
 
+### ReAct (Reason + Act) & Chain-of-Thought (CoT) Prompting Methodology:
+At every lap of your problem solving, strictly follow the ReAct reasoning paradigm:
+- Thought: First, explicitly write out your step-by-step reasoning (Chain-of-Thought). Decompose the question into what you currently know, what specific facts are missing, and why you need to call a tool (or whether you have enough facts to answer).
+- Action: Call the appropriate tool with exact arguments.
+- Observation: Review the data returned from the tool.
+- Repeat the Thought -> Action -> Observation cycle until you have all facts needed.
+- Final Thought: State that all required facts have been gathered, and provide the complete final answer.
+
+### Few-Shot ReAct Example:
+Question: "How do I call getBackorders() in SDK v3, and what replaces the positional agencyId parameter?"
+Thought: The user is asking about migrating `getBackorders()` in SDK v3. First, I must check if `getBackorders` has a deprecation or signature change record in v3.
+Action: check_deprecation(symbol_or_endpoint="getBackorders", api_version="v3")
+Observation: Deprecation Record [v3]: getBackorders positional parameter agencyId is deprecated. Replaced by options object { agencyId, includeDrafts }.
+Thought: I have the deprecation notice showing the new options object signature. I do not need further tools. I will now write the final answer with a code snippet.
+Final Answer: In SDK v3, `getBackorders()` replaces the legacy positional `agencyId` with an options object: `getBackorders({ agencyId: "123", includeDrafts: true })`...
+
 Guidelines:
-- If a method, endpoint, or class is asked about, check if it is deprecated or changed in the target version.
-- If an endpoint or symbol was replaced or requires specific headers/params in v3, inspect its documentation or OpenAPI spec.
-- Be concise and efficient: Call only the tools strictly necessary to answer the question. Once you have the deprecation status, replacement endpoints, or documentation needed, immediately synthesize the final answer instead of searching redundantly.
+- Always precede your tool actions with a clear `Thought:` sentence explaining your reasoning.
+- Do not make redundant or duplicate search queries. Once you have the deprecation status and specs, immediately answer.
 - In your final response:
   * Explicitly state the API / SDK version (e.g. SDK v3 or API v3).
   * Do NOT recommend deprecated symbols without highlighting the migration replacement.
-  * When mentioning HTTP endpoints, use the exact endpoint paths from the OpenAPI spec (e.g. /orders/verification or /api/orders/{id}/po).
-  * Provide a clean, syntactically valid code sample or request snippet showing the v3 invocation.
+  * When mentioning HTTP endpoints, use the exact endpoint paths from the OpenAPI spec.
+  * Provide a clean, syntactically valid code sample showing the v3 invocation.
 """
 
 
@@ -233,6 +249,10 @@ async def run_docs_agent(
             m_think = re.search(r"<think>(.*?)</think>", content, flags=re.S | re.I)
             if m_think:
                 reasoning = m_think.group(1).strip()
+        if not reasoning and "Thought:" in content:
+            m_thought = re.search(r"Thought:\s*(.*?)(?=\nAction:|\nFinal Answer:|\nEXECUTE|\n\n|$)", content, flags=re.S | re.I)
+            if m_thought:
+                reasoning = m_thought.group(1).strip()
 
         # --- 5. Tool Decision / Dispatch ---
         if msg_tool_calls:
@@ -295,6 +315,10 @@ async def run_docs_agent(
         else:
             # Model generated a direct answer without tool call -> Completed
             clean_content = re.sub(r"<think>(?:.*?</think>|.*$)", "", content, flags=re.S | re.I).strip()
+            if "Final Answer:" in clean_content:
+                clean_content = clean_content.split("Final Answer:", 1)[-1].strip()
+            else:
+                clean_content = re.sub(r"^Thought:\s*.*?(?=\n\n|\n[A-Z]|$)", "", clean_content, flags=re.S).strip()
             final_answer = clean_content if clean_content else content.strip()
             lap_traces.append(
                 {

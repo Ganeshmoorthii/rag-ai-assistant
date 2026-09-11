@@ -134,6 +134,9 @@ export default function ChatPanel() {
                           <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
                             Week 7 Docs Agent Diagnostics
+                            <span className="ml-1 px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-mono font-semibold">
+                              ReAct + CoT
+                            </span>
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
