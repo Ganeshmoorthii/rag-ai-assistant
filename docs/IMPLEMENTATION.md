@@ -13,8 +13,8 @@ results, and the known gaps.
 > For the narrative writeup of the Week 4 retrieval investigation see
 > [RETRIEVAL_DEBUGGING.md](RETRIEVAL_DEBUGGING.md); for the Week 5 error
 > analysis see [notes.md](notes.md), [taxonomy.md](taxonomy.md) and
-> [prediction.md](prediction.md); for quickstart instructions see
-> [README.md](README.md).
+> [prediction.md](experiments/prediction.md); for quickstart instructions see
+> [README.md](../README.md).
 
 ---
 
@@ -107,7 +107,7 @@ metrics that hit-rate@3 is structurally blind to.
 | Backend application (`backend/app/`) | 20 | ~1,500 |
 | Evaluation harness (`backend/eval/`) | 5 | ~900 |
 | Frontend (`frontend/src/`) | 10 | ~2,650 |
-| Documentation (root `*.md`) | 6 | ~540 |
+| Documentation (`docs/` + README) | 6 | ~540 |
 | **Total tracked files** | **69** | — |
 
 ---
@@ -148,7 +148,7 @@ filtering bug in `apply_mmr` (candidates missing embeddings were being scored
 as maximally novel and jumping to the top).
 
 Deliverables: [RETRIEVAL_DEBUGGING.md](RETRIEVAL_DEBUGGING.md) and
-[results.md](results.md).
+[results.md](experiments/results.md).
 
 ### Week 4.5 — UI maturity
 
@@ -166,12 +166,12 @@ Commits `165ac86` → `cdfac10` (2026-09-01 to 2026-09-05):
   failure modes
 - `eval/replay_trace.py` — a seeded sampler and offline replay engine that
   reconstructs the exact prompt from a trace record alone, plus a schema audit
-- `app/services/trace_logger.py` — live trace persistence, so real user queries
+- `app/services/observability/trace_logger.py` — live trace persistence, so real user queries
   land in the same JSONL format as the generated dataset
 - Provider switching (OpenRouter ⇄ Groq) via a single boolean
 
 Deliverables: [notes.md](notes.md), [taxonomy.md](taxonomy.md),
-[prediction.md](prediction.md).
+[prediction.md](experiments/prediction.md).
 
 ### Week 5.5 — chunk transparency
 
@@ -188,12 +188,14 @@ you now inspect chunk boundaries directly instead of inferring them.
 ```
 AI-Assistant/
 ├── README.md                       Quickstart, API summary, config table
-├── RETRIEVAL_DEBUGGING.md          Week 4 narrative writeup
-├── IMPLEMENTATION.md               ← this document
-├── results.md                      Week 4 practical: failure separation
-├── notes.md                        Week 5 error analysis notes
-├── taxonomy.md                     Week 5 failure-mode taxonomy
-├── prediction.md                   Week 5 dated falsifiable prediction
+├── docs/
+│   ├── IMPLEMENTATION.md           ← this document
+│   ├── RETRIEVAL_DEBUGGING.md      Week 4 narrative writeup
+│   ├── notes.md                    Week 5 error analysis notes
+│   ├── taxonomy.md                 Week 5 failure-mode taxonomy
+│   └── experiments/
+│       ├── results.md              Week 4 practical: failure separation
+│       └── prediction.md / .txt    Week 5 dated falsifiable prediction
 ├── .gitignore
 ├── .vscode/
 │   └── launch.json                 FastAPI debug config (subProcess: true)
@@ -222,25 +224,47 @@ AI-Assistant/
 │   │   │       └── evaluation.py   Triage + Eval request/response models
 │   │   │
 │   │   └── services/
-│   │       ├── pdf_loader.py       pypdf text extraction + OCR fallback
-│   │       ├── chunker.py          Word-window chunking with overlap
-│   │       ├── ingest.py           Orchestrates load → chunk → store
-│   │       ├── vector_store.py     ChromaDB wrapper (the only Chroma import)
-│   │       ├── bm25.py             BM25 index, pure Python, no dependency
-│   │       ├── retriever.py        The pipeline: RRF, MMR, tracing
-│   │       ├── reranker.py         Cross-encoder second pass
-│   │       ├── query_rewriter.py   Rewrite + HyDE + reasoning-model cleanup
-│   │       ├── llm_client.py       Provider-agnostic chat completion
-│   │       ├── metrics.py          hit-rate@k, recall@k, MRR
-│   │       └── trace_logger.py     Live interaction persistence
+│   │       ├── ingestion/
+│   │       │   ├── pdf_loader.py       pypdf text extraction + OCR fallback
+│   │       │   ├── chunker.py          Word-window chunking with overlap
+│   │       │   └── ingest.py           Orchestrates load → chunk → store
+│   │       ├── retrieval/
+│   │       │   ├── vector_store.py     ChromaDB wrapper (the only Chroma import)
+│   │       │   ├── bm25.py             BM25 index, pure Python, no dependency
+│   │       │   ├── retriever.py        The pipeline: RRF, MMR, tracing
+│   │       │   ├── reranker.py         Cross-encoder second pass
+│   │       │   ├── query_rewriter.py   Rewrite + HyDE + reasoning-model cleanup
+│   │       │   └── metrics.py          hit-rate@k, recall@k, MRR
+│   │       ├── llm/
+│   │       │   └── llm_client.py       Provider-agnostic chat completion
+│   │       ├── agents/
+│   │       │   ├── rag_graph/          LangGraph agentic RAG (3 agents)
+│   │       │   │   ├── graph_rag.py
+│   │       │   │   ├── query_analyser_agent.py
+│   │       │   │   ├── retrieval_agent.py
+│   │       │   │   └── response_agent.py
+│   │       │   └── docs_qa/            Developer-docs Q&A (Week 7 race)
+│   │       │       ├── docs_agent.py       Tool-calling agent
+│   │       │       ├── fixed_workflow.py   Fixed-pipeline baseline
+│   │       │       └── doc_tools.py        search_docs, get_openapi_spec, check_deprecation
+│   │       └── observability/
+│   │           └── trace_logger.py     Live interaction persistence
+│   │
+│   ├── tests/                      test_application_comprehensive.py, test_graph_smoke.py
 │   │
 │   ├── eval/
-│   │   ├── golden_set.json         25 questions (the measurement set)
-│   │   ├── golden_set.jsonl        12 questions (the Week 4 submission set)
 │   │   ├── run_eval.py             CLI harness: run, compare, sweep
+│   │   ├── run_eval_judge.py       LLM-judge evaluation (judge v1 vs v2)
+│   │   ├── run_week7_race.py       Docs agent vs fixed workflow race
+│   │   ├── assertions.py           Deterministic answer assertions
+│   │   ├── build_unified_eval_set.py
 │   │   ├── generate_traces.py      100-trace dataset generator
 │   │   ├── replay_trace.py         Seeded sampler + offline replay
-│   │   └── results/                One JSON per saved configuration run
+│   │   ├── datasets/               golden_set.json (25 q), golden_set.jsonl (12 q), eval_set_25,
+│   │   │                           labels_25, week7_test_set, openapi_spec, advita goldset
+│   │   ├── prompts/                judge_v1.txt, judge_v2.txt
+│   │   ├── tests/                  test_judge_v1.py, test_judge_v2.py
+│   │   └── results/                Saved run outputs (per-config JSON, race.csv, judge runs)
 │   │       ├── baseline.json  hybrid.json  hybrid_rerank.json
 │   │       └── hyde.json      mmr.json     rerank.json  rewrite.json
 │   │
@@ -291,7 +315,7 @@ Two consequences worth stating explicitly:
 1. **`vector_store.py` is the only module that imports `chromadb`.** Swapping
    for Qdrant, pgvector or FAISS is a single-file change.
 2. **The evaluation harness runs the production pipeline, not a copy of it.**
-   `eval/run_eval.py` imports `app.services.retriever` directly. There is no
+   `eval/run_eval.py` imports `app.services.retrieval.retriever` directly. There is no
    parallel "eval version" of retrieval that can silently drift from what
    ships.
 
@@ -310,7 +334,7 @@ Two consequences worth stating explicitly:
   routes/documents.py ── validate .pdf, uuid-prefix filename, write to disk
       │
       ▼
-  services/ingest.py ──── orchestrator
+  services/ingestion/ingest.py ──── orchestrator
       │
       ├─▶ pdf_loader.extract_text_by_page()
       │       pypdf per page  ──▶ empty? ──▶ pdf2image (Poppler)
@@ -338,7 +362,7 @@ Two consequences worth stating explicitly:
   routes/query.py ──── flow_log, resolve config, delegate
       │
       ▼
-  services/retriever.retrieve()
+  services/retrieval/retriever.retrieve()
       │
       ├── Stage 1  query transform ....... rewrite | HyDE | passthrough
       │
@@ -354,11 +378,11 @@ Two consequences worth stating explicitly:
       └── slice to top_k, assign ranks, finalise trace
       │
       ▼
-  services/llm_client.generate_answer()
+  services/llm/llm_client.generate_answer()
       build context block → POST to OpenRouter | Groq → extract answer
       │
       ▼
-  services/trace_logger.log_interaction_trace() ── append to traces.jsonl
+  services/observability/trace_logger.log_interaction_trace() ── append to traces.jsonl
       │
       ▼
   { answer, sources[], trace{} }
@@ -639,7 +663,7 @@ Four decisions worth noting:
    the UI shows an "Indexing…" overlay. For a 500-page corpus this needs a
    background task — see §25.
 
-### 7.2 Text extraction and OCR — `services/pdf_loader.py`
+### 7.2 Text extraction and OCR — `services/ingestion/pdf_loader.py`
 
 ```python
 if settings.tesseract_cmd:
@@ -687,7 +711,7 @@ installed and on `PATH`. A blank `POPPLER_PATH` is the safer setting once the
 binaries are on `PATH`; a hardcoded absolute path copied from another machine
 is the failure mode to watch for.
 
-### 7.3 Chunking — `services/chunker.py`
+### 7.3 Chunking — `services/ingestion/chunker.py`
 
 ```python
 def chunk_text(text: str, chunk_size: int | None = None, overlap: int | None = None) -> list[str]:
@@ -749,7 +773,7 @@ ground-truth key. The trade-off is real and was measured: a table split across
 pages 2–3 loses the association between a row label and its meaning, which is
 exactly the unfixable q01 failure documented in §18.4.
 
-### 7.4 Orchestration — `services/ingest.py`
+### 7.4 Orchestration — `services/ingestion/ingest.py`
 
 ```python
 def ingest_pdf(file_path: str, filename: str) -> dict:
@@ -773,7 +797,7 @@ without touching the others.
 
 ## 8. Storage Layer — ChromaDB
 
-### 8.1 Client and collection — `services/vector_store.py`
+### 8.1 Client and collection — `services/retrieval/vector_store.py`
 
 ```python
 _client = chromadb.PersistentClient(path=settings.chroma_dir)
@@ -908,7 +932,7 @@ top of the results (the bug fixed in commit `d40edc4`).
 
 ## 9. The BM25 Keyword Index
 
-`backend/app/services/bm25.py` — ~200 lines, pure Python, no dependency.
+`backend/app/services/retrieval/bm25.py` — ~200 lines, pure Python, no dependency.
 
 ### 9.1 Why keyword search exists here at all
 
@@ -1109,7 +1133,7 @@ because non-deterministic ranking makes before/after comparison meaningless.
 
 ## 10. The Retrieval Pipeline
 
-`backend/app/services/retriever.py` — the one place every strategy is composed.
+`backend/app/services/retrieval/retriever.py` — the one place every strategy is composed.
 
 ### 10.1 Shape
 
@@ -1351,7 +1375,7 @@ five times, and `traces.jsonl` would grow by tens of KB per query. A
 
 ## 11. Query Transformation — Rewrite and HyDE
 
-`backend/app/services/query_rewriter.py`
+`backend/app/services/retrieval/query_rewriter.py`
 
 ### 11.1 The problem being solved
 
@@ -1529,7 +1553,7 @@ corpus (§18) neither earned its cost.
 
 ## 12. Cross-Encoder Reranking
 
-`backend/app/services/reranker.py`
+`backend/app/services/retrieval/reranker.py`
 
 ### 12.1 Bi-encoder vs cross-encoder
 
@@ -1705,7 +1729,7 @@ The practical diagnostic:
 
 ## 13. MMR Diversity Filtering
 
-`apply_mmr()` in `backend/app/services/retriever.py`
+`apply_mmr()` in `backend/app/services/retrieval/retriever.py`
 
 ### 13.1 The problem
 
@@ -1944,7 +1968,7 @@ into the persisted JSONL.
 
 ## 15. Generation Layer
 
-`backend/app/services/llm_client.py`
+`backend/app/services/llm/llm_client.py`
 
 ### 15.1 The system prompt
 
@@ -2119,7 +2143,7 @@ LLM unless triage explicitly asks for an answer.
 
 ## 16. Trace Logging and Replay
 
-### 16.1 Live logging — `services/trace_logger.py`
+### 16.1 Live logging — `services/observability/trace_logger.py`
 
 Every query — successful, empty, retrieval-only, or errored — appends one JSON
 line to `backend/data/traces.jsonl`.
@@ -2322,7 +2346,7 @@ At `temperature = 0.0` the replayed output matches the original exactly
 
 ## 17. Evaluation System
 
-### 17.1 Metrics — `services/metrics.py`
+### 17.1 Metrics — `services/retrieval/metrics.py`
 
 Three metrics that answer three different questions. Reporting the wrong one
 is the single most common way a retrieval writeup goes wrong.
@@ -2440,7 +2464,7 @@ This is the breakdown that answers *"which failures did my change NOT fix?"* —
 a corpus-wide average hides that hybrid fixed every `exact_term` question and
 did nothing for the `vague_phrasing` ones.
 
-### 17.6 The golden set — `eval/golden_set.json`
+### 17.6 The golden set — `eval/datasets/golden_set.json`
 
 25 questions, each recording which page(s) actually contain the answer.
 
@@ -2479,7 +2503,7 @@ did nothing for the `vague_phrasing` ones.
 survives re-ingestion. This decision is what keeps the golden set usable
 across corpus rebuilds.
 
-### 17.7 The second golden set — `eval/golden_set.jsonl`
+### 17.7 The second golden set — `eval/datasets/golden_set.jsonl`
 
 A 12-question subset used as the Week 4 submission set, in JSONL rather than
 JSON, and carrying an extra `expected_chunk_id` field:
@@ -2911,7 +2935,7 @@ the inspector's `query_terms` line.
 
 ### 18.7 The Week 4 submission measurement
 
-[results.md](results.md) records a separate, narrower measurement on the
+[results.md](experiments/results.md) records a separate, narrower measurement on the
 12-question `golden_set.jsonl` with per-question latency:
 
 | Run | Hits / 12 | Hit-rate@3 | p50 latency |
@@ -3243,7 +3267,7 @@ message, `sources: []`) and `retrieval_only` (answer is the literal string
 
 ### `GET /api/golden-set`
 
-Returns `eval/golden_set.json` verbatim, including `_readme`. `404` if the
+Returns `eval/datasets/golden_set.json` verbatim, including `_readme`. `404` if the
 file is absent.
 
 ### `POST /api/evaluate`
@@ -3916,7 +3940,7 @@ Verify the whole OCR chain without the HTTP layer:
 
 ```powershell
 cd backend
-.\.venv\Scripts\python.exe -c "from app.services.pdf_loader import _ocr_page; print(len(_ocr_page('data/uploads/<file>.pdf', 1)))"
+.\.venv\Scripts\python.exe -c "from app.services.ingestion.pdf_loader import _ocr_page; print(len(_ocr_page('data/uploads/<file>.pdf', 1)))"
 ```
 
 A non-zero character count means Poppler and Tesseract are both wired up.
@@ -4242,17 +4266,17 @@ on the thing it is actually good at (§13.4).
 | `app/api/schemas/documents.py` | 25 | `UploadResponse`, `DocumentInfo`, `ChunkInfo` |
 | `app/api/schemas/query.py` | 33 | `QueryRequest`, `SourceChunk`, `QueryResponse` |
 | `app/api/schemas/evaluation.py` | 51 | `ExpectedPage`, Triage + Eval models |
-| `app/services/pdf_loader.py` | 31 | pypdf extraction + per-page OCR fallback |
-| `app/services/chunker.py` | 21 | Sliding word-window chunking |
-| `app/services/ingest.py` | 16 | Orchestrates extract → chunk → store |
-| `app/services/vector_store.py` | 177 | ChromaDB: add, query, get, embeddings, delete |
-| `app/services/bm25.py` | 200 | BM25 index and search, pure Python |
-| `app/services/retriever.py` | 464 | The pipeline: RRF, MMR, staging, tracing |
-| `app/services/reranker.py` | 114 | Cross-encoder lazy load + rerank |
-| `app/services/query_rewriter.py` | 209 | Rewrite, HyDE, reasoning-model cleanup |
-| `app/services/llm_client.py` | 94 | Prompt assembly, provider call, error handling |
-| `app/services/metrics.py` | 129 | hit-rate@k, recall@k, MRR, aggregation |
-| `app/services/trace_logger.py` | 122 | Live interaction persistence to JSONL |
+| `app/services/ingestion/pdf_loader.py` | 31 | pypdf extraction + per-page OCR fallback |
+| `app/services/ingestion/chunker.py` | 21 | Sliding word-window chunking |
+| `app/services/ingestion/ingest.py` | 16 | Orchestrates extract → chunk → store |
+| `app/services/retrieval/vector_store.py` | 177 | ChromaDB: add, query, get, embeddings, delete |
+| `app/services/retrieval/bm25.py` | 200 | BM25 index and search, pure Python |
+| `app/services/retrieval/retriever.py` | 464 | The pipeline: RRF, MMR, staging, tracing |
+| `app/services/retrieval/reranker.py` | 114 | Cross-encoder lazy load + rerank |
+| `app/services/retrieval/query_rewriter.py` | 209 | Rewrite, HyDE, reasoning-model cleanup |
+| `app/services/llm/llm_client.py` | 94 | Prompt assembly, provider call, error handling |
+| `app/services/retrieval/metrics.py` | 129 | hit-rate@k, recall@k, MRR, aggregation |
+| `app/services/observability/trace_logger.py` | 122 | Live interaction persistence to JSONL |
 
 ### Evaluation
 
@@ -4261,8 +4285,8 @@ on the thing it is actually good at (§13.4).
 | `eval/run_eval.py` | 413 | CLI harness: run, compare, sweep, report |
 | `eval/generate_traces.py` | ~420 | Deterministic 100-trace generator |
 | `eval/replay_trace.py` | 128 | Seeded sampler, offline replay, schema audit |
-| `eval/golden_set.json` | — | 25 questions, categorised, with `_readme` |
-| `eval/golden_set.jsonl` | 12 | Week 4 submission set with `expected_chunk_id` |
+| `eval/datasets/golden_set.json` | — | 25 questions, categorised, with `_readme` |
+| `eval/datasets/golden_set.jsonl` | 12 | Week 4 submission set with `expected_chunk_id` |
 | `eval/results/*.json` | 7 files | Saved runs with full per-question traces |
 
 ### Frontend

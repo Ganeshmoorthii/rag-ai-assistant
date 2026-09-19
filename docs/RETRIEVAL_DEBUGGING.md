@@ -160,7 +160,7 @@ The configured model (`nvidia/nemotron-3-ultra-550b-a55b:free`) is a
 **reasoning model**: it emitted its chain-of-thought instead of a query. That
 monologue was then embedded, so the search probe was meta-commentary *about*
 the question rather than the question. `_clean_rewrite()` in
-[query_rewriter.py](backend/app/services/query_rewriter.py) now strips it.
+[query_rewriter.py](../backend/app/services/retrieval/query_rewriter.py) now strips it.
 
 **Lesson:** when a technique underperforms, look at its intermediate output
 before concluding the technique is wrong. After the fix, rewriting recovered
@@ -201,7 +201,7 @@ In the UI (`npm run dev` + `uvicorn app.main:app`):
 **BM25** — keyword scoring that weights *rare* words heavily.
 `ERR-4032` in 1 chunk of 25 scores high; "the" scores ~0. `k1=1.5` saturates
 repeated terms; `b=0.75` stops long chunks winning by length alone.
-Implemented from scratch in [bm25.py](backend/app/services/bm25.py) — no new
+Implemented from scratch in [bm25.py](../backend/app/services/retrieval/bm25.py) — no new
 dependency.
 
 **Keyword vs semantic** — semantic matches *meaning* ("how does restocking
@@ -240,15 +240,15 @@ lower another.
 
 | file | what it does |
 |---|---|
-| [bm25.py](backend/app/services/bm25.py) | BM25 index, pure Python |
-| [retriever.py](backend/app/services/retriever.py) | pipeline + RRF + MMR + tracing |
-| [reranker.py](backend/app/services/reranker.py) | cross-encoder second pass |
-| [query_rewriter.py](backend/app/services/query_rewriter.py) | rewrite + HyDE |
-| [metrics.py](backend/app/services/metrics.py) | hit-rate, recall, MRR |
-| [golden_set.json](backend/eval/golden_set.json) | 25 questions, keyed on filename+page |
-| [run_eval.py](backend/eval/run_eval.py) | CLI harness |
-| [InspectorPanel.jsx](frontend/src/components/InspectorPanel.jsx) | the inspection view |
-| [EvalPanel.jsx](frontend/src/components/EvalPanel.jsx) | before/after in the UI |
+| [bm25.py](../backend/app/services/retrieval/bm25.py) | BM25 index, pure Python |
+| [retriever.py](../backend/app/services/retrieval/retriever.py) | pipeline + RRF + MMR + tracing |
+| [reranker.py](../backend/app/services/retrieval/reranker.py) | cross-encoder second pass |
+| [query_rewriter.py](../backend/app/services/retrieval/query_rewriter.py) | rewrite + HyDE |
+| [metrics.py](../backend/app/services/retrieval/metrics.py) | hit-rate, recall, MRR |
+| [golden_set.json](../backend/eval/datasets/golden_set.json) | 25 questions, keyed on filename+page |
+| [run_eval.py](../backend/eval/run_eval.py) | CLI harness |
+| [InspectorPanel.jsx](../frontend/src/components/InspectorPanel.jsx) | the inspection view |
+| [EvalPanel.jsx](../frontend/src/components/EvalPanel.jsx) | before/after in the UI |
 
-All strategies default to **off** in [config.py](backend/app/core/config.py),
+All strategies default to **off** in [config.py](../backend/app/core/config.py),
 so `baseline` is genuinely last week's app.

@@ -42,7 +42,7 @@ The app can now tell you **which half of the pipeline is broken** — whether it
 fetched the wrong document, or fetched the right one and answered badly — and
 measure any retrieval change with a before/after number.
 
-See **[RETRIEVAL_DEBUGGING.md](RETRIEVAL_DEBUGGING.md)** for the full writeup,
+See **[RETRIEVAL_DEBUGGING.md](docs/RETRIEVAL_DEBUGGING.md)** for the full writeup,
 results, and concept notes.
 
 Headline result on this repo's own PDFs (25 golden questions, `top_k=3`):

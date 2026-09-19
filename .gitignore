@@ -15,3 +15,11 @@ frontend/.env
 # OS
 .DS_Store
 Thumbs.db
+
+# Python caches / tooling
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Stale root-level data dir from early runs (real data lives in backend/data)
+/data/

@@ -2,7 +2,7 @@
 
 ## Golden set
 
-The submission set is [backend/eval/golden_set.jsonl](backend/eval/golden_set.jsonl). It contains 12 real developer questions from the two ingested developer documents. The known-correct chunk is recorded as `expected_chunk_id`; the filename and page are retained as a human-readable cross-check. Eight questions contain exact identifiers, endpoints, status codes, or a wildcard token, exceeding the four-question requirement.
+The submission set is [backend/eval/datasets/golden_set.jsonl](../../backend/eval/datasets/golden_set.jsonl). It contains 12 real developer questions from the two ingested developer documents. The known-correct chunk is recorded as `expected_chunk_id`; the filename and page are retained as a human-readable cross-check. Eight questions contain exact identifiers, endpoints, status codes, or a wildcard token, exceeding the four-question requirement.
 
 The corpus was unchanged between runs: 25 chunks, `top_k=3`, `rrf_k=60`, and the same embedding model. Chunk IDs below are the IDs currently persisted in ChromaDB.
 
@@ -24,7 +24,7 @@ All three baseline misses were opened in the Inspector view. There were no gener
 
 ## One change
 
-I enabled **BM25 + dense retrieval fused with reciprocal rank fusion**, with `rrf_k=60`, by changing only `hybrid_enabled` from `False` to `True` in [backend/app/core/config.py](backend/app/core/config.py). This is justified by the tally: two of the three failures are exact-token misses, where BM25 can match the literal identifier even when dense retrieval blurs it. The implementation uses rank fusion rather than adding BM25 and cosine scores. No reranker, rewrite, HyDE, MMR, chunking, or embedding-model change was included.
+I enabled **BM25 + dense retrieval fused with reciprocal rank fusion**, with `rrf_k=60`, by changing only `hybrid_enabled` from `False` to `True` in [backend/app/core/config.py](../../backend/app/core/config.py). This is justified by the tally: two of the three failures are exact-token misses, where BM25 can match the literal identifier even when dense retrieval blurs it. The implementation uses rank fusion rather than adding BM25 and cosine scores. No reranker, rewrite, HyDE, MMR, chunking, or embedding-model change was included.
 
 ## Before and after
 
@@ -63,4 +63,4 @@ The original R-failures fixed were **q15** and **q18**. q15 is the direct exact-
 
 **Ship hybrid + RRF for this week's change.** It raises the same-set hit-rate@3 from **75.0% to 91.7%**, fixes two of three inspected retrieval failures, and does not regress any of the nine baseline hits. The remaining q01 failure is explicitly known and untouched. The measured p50 moved from **123.17 ms to 120.34 ms**, but that 2.83 ms difference is too small to treat as a performance win; validate latency at realistic concurrency before promising it operationally.
 
-The code diff is exactly one retrieval behavior change: the default hybrid flag in [backend/app/core/config.py](backend/app/core/config.py). The baseline remains reproducible through the evaluation harness with `hybrid=False`.
+The code diff is exactly one retrieval behavior change: the default hybrid flag in [backend/app/core/config.py](../../backend/app/core/config.py). The baseline remains reproducible through the evaluation harness with `hybrid=False`.
