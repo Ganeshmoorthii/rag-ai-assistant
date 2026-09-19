@@ -36,10 +36,10 @@ import sys
 # Make `app` importable when run as `python -m eval.run_eval` from backend/.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services import metrics, retriever  # noqa: E402
+from app.services.retrieval import metrics, retriever  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-GOLDEN_PATH = os.path.join(HERE, "golden_set.json")
+GOLDEN_PATH = os.path.join(HERE, "datasets", "golden_set.json")
 RESULTS_DIR = os.path.join(HERE, "results")
 
 # Named configurations. Each differs from `baseline` in ONE dimension --
@@ -114,7 +114,7 @@ async def run_config(
             continue
 
         if use_graph:
-            from app.services import graph_rag
+            from app.services.agents.rag_graph import graph_rag
             result = await graph_rag.run_rag_graph(q["question"], top_k=top_k, **cfg)
         else:
             result = await retriever.retrieve(q["question"], top_k=top_k, **cfg)

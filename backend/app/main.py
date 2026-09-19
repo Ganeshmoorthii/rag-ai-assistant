@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
-from app.services import retriever
+from app.services.retrieval import retriever
 
 
 @asynccontextmanager

@@ -12,7 +12,7 @@ from typing import Any
 
 from app.core.config import settings
 from app.core.flow_log import flow_log
-from app.services.llm_client import SYSTEM_PROMPT
+from app.services.llm.llm_client import SYSTEM_PROMPT
 
 _lock = threading.Lock()
 
@@ -28,7 +28,7 @@ def get_traces_file_path() -> str:
         return os.path.abspath(raw_path)
 
     # Fallback relative to backend root
-    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     return os.path.abspath(os.path.join(backend_root, raw_path))
 
 

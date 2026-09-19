@@ -30,11 +30,11 @@ load_dotenv(os.path.join(BACKEND_DIR, ".env"))
 from app.core.config import settings  # noqa: E402
 from eval.assertions import run_all_assertions, load_openapi_spec  # noqa: E402
 
-EVAL_SET_PATH = os.path.join(BACKEND_DIR, "eval", "eval_set_25.json")
-LABELS_PATH = os.path.join(PROJECT_ROOT, "labels_25.json")
-JUDGE_V1_PATH = os.path.join(PROJECT_ROOT, "judge_v1.txt")
-JUDGE_V2_PATH = os.path.join(PROJECT_ROOT, "judge_v2.txt")
-PREDICTION_PATH = os.path.join(PROJECT_ROOT, "prediction.txt")
+EVAL_SET_PATH = os.path.join(BACKEND_DIR, "eval", "datasets", "eval_set_25.json")
+LABELS_PATH = os.path.join(BACKEND_DIR, "eval", "datasets", "labels_25.json")
+JUDGE_V1_PATH = os.path.join(BACKEND_DIR, "eval", "prompts", "judge_v1.txt")
+JUDGE_V2_PATH = os.path.join(BACKEND_DIR, "eval", "prompts", "judge_v2.txt")
+PREDICTION_PATH = os.path.join(PROJECT_ROOT, "docs", "experiments", "prediction.txt")
 
 
 def load_dataset():

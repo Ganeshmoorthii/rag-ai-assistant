@@ -7,13 +7,13 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.schemas import EvalRequest, EvalResponse, TriageRequest, TriageResponse
 from app.core.config import settings
-from app.services import metrics, retriever
-from app.services.llm_client import generate_answer
+from app.services.retrieval import metrics, retriever
+from app.services.llm.llm_client import generate_answer
 
 router = APIRouter()
 
 GOLDEN_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "eval", "golden_set.json")
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "eval", "datasets", "golden_set.json")
 )
 
 

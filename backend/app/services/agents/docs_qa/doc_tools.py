@@ -22,7 +22,8 @@ class ApiVersion(str, Enum):
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SPEC_PATH = os.path.join(HERE, "..", "..", "eval", "openapi_spec.json")
+BACKEND_DIR = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
+SPEC_PATH = os.path.join(BACKEND_DIR, "eval", "datasets", "openapi_spec.json")
 
 # Deprecation and migration catalog by target version
 DEPRECATIONS_CATALOG: Dict[str, Dict[str, Dict[str, str]]] = {
@@ -95,7 +96,7 @@ def _load_openapi_spec() -> dict:
 async def search_docs(query: str, top_k: int = 3) -> str:
     """Searches developer documentation guides, PDFs, and conceptual manuals for technical explanations and usage examples. Use this ONLY to search prose guides and documentation articles."""
     try:
-        from app.services import retriever
+        from app.services.retrieval import retriever
         retriever.ensure_bm25_index()
         res = await retriever.retrieve(question=query, top_k=top_k, rewrite=False, rerank=False)
         chunks = res.get("chunks", [])

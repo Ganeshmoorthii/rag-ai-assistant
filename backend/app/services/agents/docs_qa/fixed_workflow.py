@@ -20,7 +20,7 @@ import httpx
 
 from app.core.config import settings
 from app.core.flow_log import flow_log
-from app.services.doc_tools import ApiVersion, check_deprecation, get_openapi_spec, search_docs
+from app.services.agents.docs_qa.doc_tools import ApiVersion, check_deprecation, get_openapi_spec, search_docs
 
 PROMPT_COST_PER_TOKEN = 0.35 / 1_000_000.0
 COMPLETION_COST_PER_TOKEN = 0.80 / 1_000_000.0

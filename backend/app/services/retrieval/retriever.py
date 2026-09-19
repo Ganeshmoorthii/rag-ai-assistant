@@ -26,7 +26,7 @@ import time
 
 from app.core.config import settings
 from app.core.flow_log import flow_log
-from app.services import bm25, reranker, vector_store
+from app.services.retrieval import bm25, reranker, vector_store
 
 
 # --- BM25 index lifecycle -------------------------------------------------
@@ -271,7 +271,7 @@ async def retrieve(
     search_query = question
     if do_rewrite or hyde:
         t0 = time.perf_counter()
-        from app.services import query_rewriter
+        from app.services.retrieval import query_rewriter
 
         if hyde:
             search_query = await query_rewriter.generate_hyde_document(question)

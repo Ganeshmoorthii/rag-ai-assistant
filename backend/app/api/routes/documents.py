@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException, UploadFile
 
 from app.api.schemas import ChunkInfo, DocumentInfo, UploadResponse
 from app.core.config import settings
-from app.services import retriever, vector_store
-from app.services.ingest import ingest_pdf
+from app.services.retrieval import retriever, vector_store
+from app.services.ingestion.ingest import ingest_pdf
 
 
 router = APIRouter()

@@ -17,7 +17,7 @@ import re
 from typing import Any
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SPEC_PATH = os.path.join(HERE, "openapi_spec.json")
+SPEC_PATH = os.path.join(HERE, "datasets", "openapi_spec.json")
 
 # Default deprecations catalog for Cimplicity / Advita
 DEPRECATED_SYMBOLS = {

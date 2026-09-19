@@ -19,7 +19,7 @@ import httpx
 
 from app.core.config import settings
 from app.core.flow_log import flow_log
-from app.services.doc_tools import TOOLS_SCHEMA, execute_tool
+from app.services.agents.docs_qa.doc_tools import TOOLS_SCHEMA, execute_tool
 
 # Pricing per million tokens (Qwen/Llama standard tier rates: $0.35/1M input, $0.80/1M output)
 PROMPT_COST_PER_TOKEN = 0.35 / 1_000_000.0

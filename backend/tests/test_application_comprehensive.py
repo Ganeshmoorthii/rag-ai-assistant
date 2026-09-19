@@ -17,7 +17,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 # Ensure backend root is in sys.path
-BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
@@ -27,7 +27,9 @@ if sys.platform == "win32":
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
-from app.services import bm25, chunker, graph_rag, metrics, pdf_loader, retriever
+from app.services.retrieval import bm25, metrics, retriever
+from app.services.ingestion import chunker, pdf_loader
+from app.services.agents.rag_graph import graph_rag
 
 
 class TestDocumentProcessing(unittest.TestCase):

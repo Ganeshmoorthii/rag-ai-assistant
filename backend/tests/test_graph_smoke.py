@@ -5,11 +5,12 @@ import sys
 import os
 
 # Add backend directory to sys.path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from app.services import graph_rag, retriever
+from app.services.agents.rag_graph import graph_rag
+from app.services.retrieval import retriever
 from app.core.config import settings
 
 async def main():

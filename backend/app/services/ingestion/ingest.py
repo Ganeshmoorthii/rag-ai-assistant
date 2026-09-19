@@ -1,6 +1,6 @@
-from app.services.chunker import chunk_text
-from app.services.pdf_loader import extract_text_by_page
-from app.services.vector_store import add_chunks, new_doc_id
+from app.services.ingestion.chunker import chunk_text
+from app.services.ingestion.pdf_loader import extract_text_by_page
+from app.services.retrieval.vector_store import add_chunks, new_doc_id
 
 
 def ingest_pdf(file_path: str, filename: str) -> dict:

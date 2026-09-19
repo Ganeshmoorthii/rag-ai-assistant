@@ -25,13 +25,13 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 from app.core.config import settings
-from app.services.docs_agent import run_docs_agent
-from app.services.fixed_workflow import run_fixed_workflow
+from app.services.agents.docs_qa.docs_agent import run_docs_agent
+from app.services.agents.docs_qa.fixed_workflow import run_fixed_workflow
 from eval.assertions import load_openapi_spec, run_all_assertions
 
-TEST_SET_PATH = os.path.join(HERE, "week7_test_set.json")
-RACE_CSV_PATH = os.path.join(HERE, "race.csv")
-BUDGET_LOG_PATH = os.path.join(HERE, "budget_termination.log")
+TEST_SET_PATH = os.path.join(HERE, "datasets", "week7_test_set.json")
+RACE_CSV_PATH = os.path.join(HERE, "results", "race.csv")
+BUDGET_LOG_PATH = os.path.join(HERE, "results", "budget_termination.log")
 
 
 def load_test_set() -> List[Dict[str, Any]]:

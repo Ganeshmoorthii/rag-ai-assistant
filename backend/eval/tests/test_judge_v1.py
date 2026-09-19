@@ -7,14 +7,14 @@ import re
 import sys
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from app.core.config import settings
 import httpx
 
-EVAL_SET_PATH = os.path.join(os.path.dirname(__file__), "eval_set_25.json")
-LABELS_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "labels_25.json")
-JUDGE_V1_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "judge_v1.txt")
+EVAL_SET_PATH = os.path.join(os.path.dirname(__file__), "..", "datasets", "eval_set_25.json")
+LABELS_PATH = os.path.join(os.path.dirname(__file__), "..", "datasets", "labels_25.json")
+JUDGE_V1_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "judge_v1.txt")
 
 
 async def evaluate_v1():
@@ -119,7 +119,7 @@ async def evaluate_v1():
         print(f"  Human Label: {d['human']} | Judge v1 Verdict: {d['judge']}")
         print(f"  Judge Response: {d['raw'].strip()}")
 
-    with open("backend/eval/v1_run_output.json", "w", encoding="utf-8") as f:
+    with open(os.path.join(os.path.dirname(__file__), "..", "results", "v1_run_output.json"), "w", encoding="utf-8") as f:
         json.dump({"agreement_before": agreement, "results": results, "disagreements": disagreements}, f, indent=2)
 
 

@@ -1,10 +1,10 @@
 import json
 import os
 
-GT_PATH = os.path.join(os.path.dirname(__file__), "..", "eval_ground_truth_results.json")
+GT_PATH = os.path.join(os.path.dirname(__file__), "results", "eval_ground_truth_results.json")
 TRACES_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "traces.jsonl")
-OUTPUT_SET = os.path.join(os.path.dirname(__file__), "eval_set_25.json")
-OUTPUT_LABELS = os.path.join(os.path.dirname(__file__), "..", "..", "labels_25.json")
+OUTPUT_SET = os.path.join(os.path.dirname(__file__), "datasets", "eval_set_25.json")
+OUTPUT_LABELS = os.path.join(os.path.dirname(__file__), "datasets", "labels_25.json")
 
 # Load the 20 Q&A results
 with open(GT_PATH, "r", encoding="utf-8") as f:
