@@ -45,16 +45,16 @@ export default function ChatPanel() {
           <h2 className="text-2xl font-bold text-white mb-1">Chat Assistant</h2>
           <p className="text-sm text-slate-400">
             {useAgent
-              ? 'Powered by Week 7 Docs Agent (Multi-lap tool calling & budget tracking).'
+              ? 'Agentic RAG — the assistant reasons step by step and calls tools as needed.'
               : 'Ask questions about your indexed documents and get instant answers.'}
           </p>
         </div>
 
         {/* Toggle Switch */}
         <div className="flex items-center gap-3 bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-700/60 shadow-sm self-start sm:self-auto">
-          <span className={`text-xs font-medium transition-colors ${!useAgent ? 'text-blue-400 font-semibold' : 'text-slate-400'}`}>
+          {/* <span className={`text-xs font-medium transition-colors ${!useAgent ? 'text-blue-400 font-semibold' : 'text-slate-400'}`}>
             Standard RAG
-          </span>
+          </span> */}
           <button
             type="button"
             role="switch"
@@ -70,11 +70,8 @@ export default function ChatPanel() {
               }`}
             />
           </button>
-          <span className={`text-xs font-medium flex items-center gap-1.5 transition-colors ${useAgent ? 'text-indigo-300 font-semibold' : 'text-slate-400'}`}>
-            Docs Agent
-            <span className="px-1.5 py-0.2 text-[10px] uppercase tracking-wider font-semibold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/40">
-              Week 7 Loop
-            </span>
+          <span className={`text-xs font-medium transition-colors ${useAgent ? 'text-indigo-300 font-semibold' : 'text-slate-400'}`}>
+            Agentic RAG
           </span>
         </div>
       </div>
@@ -133,7 +130,7 @@ export default function ChatPanel() {
                         <div className="flex items-center justify-between border-b border-slate-700/50 pb-2">
                           <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                            Week 7 Docs Agent Diagnostics
+                            Agentic RAG Diagnostics
                             <span className="ml-1 px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-mono font-semibold">
                               ReAct + CoT
                             </span>
