@@ -22,32 +22,12 @@ from app.core.flow_log import flow_log
 from app.services.agents.docs_qa.doc_tools import TOOLS_SCHEMA, execute_tool
 from app.services.agents.docs_qa.loop_guard import LoopGuard
 from app.services.agents.docs_qa.tool_validator import validate_tool_call
+from app.services.security.answer_guard import is_low_effort_answer
 from app.services.security.injection_guard import (
     INJECTION_DEFENSE_CLAUSE,
+    scan_for_injection_markers,
     wrap_user_question,
 )
-
-# Hedge phrases that signal the model is giving up rather than answering.
-# Combined with a low lap/tool-call count, this catches "quiet give-up"
-# without penalizing a genuinely short, confident, correct answer.
-_LOW_EFFORT_MARKERS = (
-    "i don't have enough information",
-    "i do not have enough information",
-    "unable to determine",
-    "cannot determine",
-    "no relevant results",
-    "not enough context",
-    "i don't know",
-    "i cannot answer",
-    "insufficient information",
-)
-
-
-def _is_low_effort_answer(text: str) -> bool:
-    lowered = (text or "").strip().lower()
-    if not lowered:
-        return True
-    return any(marker in lowered for marker in _LOW_EFFORT_MARKERS)
 
 # Pricing per million tokens (Qwen/Llama standard tier rates: $0.35/1M input, $0.80/1M output)
 PROMPT_COST_PER_TOKEN = 0.35 / 1_000_000.0
@@ -135,6 +115,15 @@ async def run_docs_agent(
     low_effort_retried = False
     any_ungrounded_input = False
     any_loop_intercepted = False
+    any_tool_invalid = False
+
+    q_hits = scan_for_injection_markers(question)
+    if q_hits:
+        flow_log(
+            "security.injection_suspected",
+            source="user_question",
+            patterns_matched=q_hits,
+        )
 
     flow_log(
         "agent.loop.started",
@@ -318,6 +307,7 @@ async def run_docs_agent(
                 elif not validation.ok:
                     tool_output = validation.corrective_message
                     intercepted = True
+                    any_tool_invalid = True
                 else:
                     tool_output = await execute_tool(fn_name, args)
                     if not validation.grounded:
@@ -395,7 +385,7 @@ async def run_docs_agent(
             # --- Guard 4: quiet give-up, before accepting as final ---
             if (
                 not low_effort_retried
-                and _is_low_effort_answer(final_answer)
+                and is_low_effort_answer(final_answer)
                 and lap_idx <= 2
             ):
                 low_effort_retried = True
@@ -472,10 +462,14 @@ async def run_docs_agent(
         "lap_traces": lap_traces,
         # Guardrail signals (Part 2 of the failure-mode + injection task)
         "low_confidence": bool(
-            any_ungrounded_input or any_loop_intercepted or low_effort_retried
+            any_ungrounded_input
+            or any_loop_intercepted
+            or low_effort_retried
+            or any_tool_invalid
         ),
         "guardrails": {
             "ungrounded_tool_input": any_ungrounded_input,
+            "tool_validation_failed": any_tool_invalid,
             "loop_intercepted": any_loop_intercepted,
             "low_effort_retry_triggered": low_effort_retried,
         },

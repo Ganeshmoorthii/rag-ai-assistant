@@ -21,7 +21,7 @@ def make_call_signature(tool_name: str, args: Dict[str, Any]) -> str:
         str(k).strip().lower(): str(v).strip().lower()
         for k, v in (args or {}).items()
     }
-    payload = json.dumps({"tool": tool_name, "args": normalized}, sort_keys=True)
+    payload = json.dumps({"tool": (tool_name or "").strip().lower(), "args": normalized}, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 

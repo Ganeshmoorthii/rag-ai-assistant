@@ -60,7 +60,7 @@ def validate_tool_call(tool_name: str, args: Dict[str, Any]) -> ValidationResult
     `grounded=False` so the caller can flag the result as unverified.
     """
     if tool_name == "get_openapi_spec":
-        endpoint = args.get("endpoint_path", "")
+        endpoint = str(args.get("endpoint_path") or "").strip()
         if not _looks_like_endpoint(endpoint):
             return ValidationResult(
                 ok=False,
@@ -80,8 +80,8 @@ def validate_tool_call(tool_name: str, args: Dict[str, Any]) -> ValidationResult
         return result
 
     if tool_name == "check_deprecation":
-        target = args.get("symbol_or_endpoint", "")
-        api_version = str(args.get("api_version", "")).lower()
+        target = str(args.get("symbol_or_endpoint") or "").strip()
+        api_version = str(args.get("api_version") or "").strip().lower()
         if api_version not in ("v1", "v2", "v3"):
             return ValidationResult(
                 ok=False,
@@ -101,8 +101,8 @@ def validate_tool_call(tool_name: str, args: Dict[str, Any]) -> ValidationResult
         return result
 
     if tool_name == "search_docs":
-        query = args.get("query", "")
-        if not query or not query.strip():
+        query = str(args.get("query") or "").strip()
+        if not query:
             return ValidationResult(
                 ok=False,
                 reason="empty query",

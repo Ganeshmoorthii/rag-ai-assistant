@@ -24,9 +24,9 @@ from typing import List
 # never as a hard block, so we fail open for legitimate content that
 # happens to mention these words.
 _INJECTION_PATTERNS: List[re.Pattern] = [
-    re.compile(r"ignore (all|any|the) (previous|prior|above|earlier)", re.I),
-    re.compile(r"disregard (all|any|the) (previous|prior|above|earlier)", re.I),
-    re.compile(r"forget (all|everything|your) (instructions|prompt|rules)", re.I),
+    re.compile(r"ignore\s+(?:all\s+|any\s+|the\s+)?(?:previous|prior|above|earlier)\b", re.I),
+    re.compile(r"disregard\s+(?:all\s+|any\s+|the\s+)?(?:previous|prior|above|earlier)\b", re.I),
+    re.compile(r"forget\s+(?:all\s+|everything\s+|your\s+)?(?:instructions|prompt|rules)\b", re.I),
     re.compile(r"you are now\b", re.I),
     re.compile(r"new (instructions|system prompt|rules)\s*:", re.I),
     re.compile(r"^\s*system\s*:", re.I | re.M),
@@ -64,7 +64,13 @@ def wrap_untrusted(text: str, tag: str = "retrieved_document", **attrs: str) -> 
     attr_str = ""
     if attrs:
         attr_str = " " + " ".join(f'{k}="{v}"' for k, v in attrs.items())
-    return f"<{tag}{attr_str}>\n{text}\n</{tag}>"
+    # Sanitize closing and opening tags inside untrusted text to prevent prompt injection breakout
+    safe_text = (
+        (text or "")
+        .replace(f"</{tag}>", f"&lt;/{tag}&gt;")
+        .replace(f"<{tag}>", f"&lt;{tag}&gt;")
+    )
+    return f"<{tag}{attr_str}>\n{safe_text}\n</{tag}>"
 
 
 def wrap_user_question(question: str) -> str:
@@ -72,7 +78,12 @@ def wrap_user_question(question: str) -> str:
     a system/developer instruction, even if it contains role-play or
     'ignore previous instructions' style text.
     """
-    return f"<user_question>\n{question}\n</user_question>"
+    safe_question = (
+        (question or "")
+        .replace("</user_question>", "&lt;/user_question&gt;")
+        .replace("<user_question>", "&lt;user_question&gt;")
+    )
+    return f"<user_question>\n{safe_question}\n</user_question>"
 
 
 INJECTION_DEFENSE_CLAUSE = (

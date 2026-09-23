@@ -25,4 +25,12 @@ def is_low_effort_answer(text: str) -> bool:
     lowered = (text or "").strip().lower()
     if not lowered:
         return True
-    return any(marker in lowered for marker in _LOW_EFFORT_MARKERS)
+
+    # If the answer is short (< 300 chars), any hedge marker indicates a give-up
+    if len(lowered) < 300:
+        return any(marker in lowered for marker in _LOW_EFFORT_MARKERS)
+
+    # For longer answers, only consider it a give-up if it starts with a hedge marker
+    # (avoiding false positives where a detailed answer simply hedges on a secondary point)
+    first_line = lowered.split("\n", 1)[0].strip()
+    return any(first_line.startswith(marker) for marker in _LOW_EFFORT_MARKERS)
