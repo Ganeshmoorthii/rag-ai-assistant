@@ -21,5 +21,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Runtime/generated data
+backend/data/traces.jsonl
+
 # Stale root-level data dir from early runs (real data lives in backend/data)
 /data/
