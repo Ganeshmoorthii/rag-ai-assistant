@@ -2,18 +2,38 @@ import httpx
 
 from app.core.config import settings
 from app.core.flow_log import flow_log
+from app.services.security.injection_guard import (
+    INJECTION_DEFENSE_CLAUSE,
+    scan_for_injection_markers,
+    wrap_untrusted,
+    wrap_user_question,
+)
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant answering questions using only the provided "
     "context from the user's documents. If the answer isn't in the context, "
     "say you don't know. Cite the filename and page number when relevant."
-)
+) + INJECTION_DEFENSE_CLAUSE
 
 
 def build_context_block(matches: list[dict]) -> str:
+    """Wrap every retrieved chunk as untrusted data, tagging any chunk whose
+    text trips the injection-pattern scanner so the LLM is warned it may
+    contain planted instructions rather than genuine document content."""
     parts = []
     for m in matches:
-        parts.append(f"[{m['filename']} p.{m['page']}]\n{m['text']}")
+        hits = scan_for_injection_markers(m.get("text", ""))
+        trust = "suspicious" if hits else "untrusted"
+        if hits:
+            flow_log(
+                "security.injection_suspected",
+                source="retrieved_document",
+                filename=m.get("filename"),
+                page=m.get("page"),
+                patterns_matched=hits,
+            )
+        body = f"[{m['filename']} p.{m['page']}]\n{m['text']}"
+        parts.append(wrap_untrusted(body, tag="retrieved_document", trust=trust))
     return "\n\n---\n\n".join(parts)
 
 
@@ -23,7 +43,7 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
         raise RuntimeError(f"{key_name} is not set. Add it to backend/.env")
 
     context = build_context_block(matches)
-    user_content = f"Context:\n{context}\n\nQuestion: {question}"
+    user_content = f"Context:\n{context}\n\n{wrap_user_question(question)}"
 
     flow_log(
         "llm.request.started",

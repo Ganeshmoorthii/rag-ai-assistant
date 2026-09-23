@@ -49,6 +49,7 @@ class RAGGraphState(TypedDict):
     format: str
     uncertainty_note: Optional[str]
     hallucination_grade: Optional[str]
+    self_corrected: bool
     max_retries: int
     trace: Dict[str, Any]
     config: Dict[str, Any]
@@ -128,6 +129,7 @@ async def run_rag_graph(
         "format": "",
         "uncertainty_note": None,
         "hallucination_grade": None,
+        "self_corrected": False,
         "max_retries": settings.graph_max_retries,
         "trace": {
             "original_question": question,
@@ -155,7 +157,24 @@ async def run_rag_graph(
         "format": final_state.get("format"),
         "uncertainty_note": final_state.get("uncertainty_note"),
         "hallucination_grade": final_state.get("hallucination_grade"),
+        "self_corrected": final_state.get("self_corrected", False),
     }
+
+    # Guardrail summary: mirrors the docs_agent mode's low_confidence flag
+    # so both pipelines expose the same signal shape to the API layer.
+    # True when the answer needed a self-correction pass, still failed
+    # groundedness after that pass, evidence was never fully sufficient,
+    # or a sub-query's rewrite loop stalled without resolving.
+    grade = final_state.get("hallucination_grade")
+    stalled_any = any(
+        sr.get("stalled") for sr in final_state.get("sub_results", [])
+    )
+    trace["low_confidence"] = bool(
+        final_state.get("self_corrected")
+        or grade == "citation_mismatch"
+        or not final_state.get("evidence_sufficient", True)
+        or stalled_any
+    )
 
     return {
         "answer": final_state["answer"],

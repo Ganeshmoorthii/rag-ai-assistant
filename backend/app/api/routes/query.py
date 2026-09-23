@@ -51,6 +51,8 @@ async def query_documents(payload: QueryRequest):
                 "budget_fired": agent_out.get("budget_fired"),
                 "budget_exceeded": agent_out.get("budget_exceeded", False),
                 "lap_traces": agent_out.get("lap_traces", []),
+                "low_confidence": agent_out.get("low_confidence", False),
+                "guardrails": agent_out.get("guardrails", {}),
             },
         )
 

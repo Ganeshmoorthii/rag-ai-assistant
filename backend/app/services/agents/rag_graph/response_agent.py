@@ -18,6 +18,11 @@ from typing import Any, Dict, List, Optional
 from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.llm import llm_client
+from app.services.security.injection_guard import (
+    INJECTION_DEFENSE_CLAUSE,
+    wrap_user_question,
+)
+from app.services.security.answer_guard import is_low_effort_answer
 
 FORMAT_BY_INTENT = {
     "factual_lookup": "a short, direct paragraph",
@@ -41,7 +46,7 @@ def build_system_prompt(format_instruction: str, uncertainty_note: Optional[str]
         "claim the context does not support. Cite the filename and page "
         "number when relevant.\n\n"
         f"Format the answer as {format_instruction}."
-    )
+    ) + INJECTION_DEFENSE_CLAUSE
     if uncertainty_note:
         prompt += (
             "\n\nThe retrieved evidence has a gap: "
@@ -80,6 +85,9 @@ async def synthesize_answer(
     format_instruction = select_format(intent)
     uncertainty_note = _uncertainty_note(sufficient, sub_results)
 
+    self_corrected = False
+    self_correction_reason: Optional[str] = None
+
     if retrieval_only:
         answer = "(retrieval_only=true — generation skipped)"
     elif not documents:
@@ -87,13 +95,46 @@ async def synthesize_answer(
     else:
         system_prompt = build_system_prompt(format_instruction, uncertainty_note)
         context = llm_client.build_context_block(documents)
-        user_content = f"Context:\n{context}\n\nQuestion: {question}"
+        user_content = f"Context:\n{context}\n\n{wrap_user_question(question)}"
         answer = await llm_client.call_llm_text(
             system_prompt=system_prompt,
             user_prompt=user_content,
             max_tokens=700,
             temperature=0.0,
         )
+
+        # --- Guard: made-up citations / quiet give-up, one self-correction pass ---
+        # Cheap, no-LLM checks first; grade_generation (below in this file)
+        # is reused here as an early groundedness check rather than only
+        # at the end of the pipeline, so a bad first draft can be fixed
+        # before it ever reaches the user.
+        grade = grade_generation(answer, documents, retrieval_only=False)
+        gave_up_with_evidence = sufficient and is_low_effort_answer(answer)
+
+        if grade == "citation_mismatch" or gave_up_with_evidence:
+            self_correction_reason = (
+                "citation_mismatch" if grade == "citation_mismatch" else "low_effort_despite_evidence"
+            )
+            corrective_prompt = system_prompt + (
+                "\n\nSELF-CORRECTION NOTICE: your previous draft either cited a "
+                "filename/page that does not match the retrieved context, or "
+                "hedged despite sufficient evidence being provided below. "
+                "Re-answer using ONLY the facts and citations that literally "
+                "appear in the context block -- do not invent a citation, and "
+                "do not refuse if the context actually supports an answer."
+            )
+            answer = await llm_client.call_llm_text(
+                system_prompt=corrective_prompt,
+                user_prompt=user_content,
+                max_tokens=700,
+                temperature=0.0,
+            )
+            self_corrected = True
+            flow_log(
+                "response_agent.self_corrected",
+                reason=self_correction_reason,
+                original_grade=grade,
+            )
 
     elapsed = round((time.perf_counter() - t0) * 1000, 1)
     flow_log(
@@ -109,6 +150,8 @@ async def synthesize_answer(
         "format": format_instruction,
         "uncertainty_note": uncertainty_note,
         "elapsed_ms": elapsed,
+        "self_corrected": self_corrected,
+        "self_correction_reason": self_correction_reason,
     }
 
 
@@ -155,6 +198,8 @@ async def response_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "format": result["format"],
             "uncertainty_note": result["uncertainty_note"],
             "document_count": len(documents),
+            "self_corrected": result["self_corrected"],
+            "self_correction_reason": result["self_correction_reason"],
             "timings_ms": result["elapsed_ms"],
         }
     )
@@ -163,6 +208,7 @@ async def response_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "answer": result["answer"],
         "format": result["format"],
         "uncertainty_note": result["uncertainty_note"],
+        "self_corrected": result["self_corrected"],
         "trace": trace,
     }
 

@@ -20,6 +20,34 @@ import httpx
 from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.agents.docs_qa.doc_tools import TOOLS_SCHEMA, execute_tool
+from app.services.agents.docs_qa.loop_guard import LoopGuard
+from app.services.agents.docs_qa.tool_validator import validate_tool_call
+from app.services.security.injection_guard import (
+    INJECTION_DEFENSE_CLAUSE,
+    wrap_user_question,
+)
+
+# Hedge phrases that signal the model is giving up rather than answering.
+# Combined with a low lap/tool-call count, this catches "quiet give-up"
+# without penalizing a genuinely short, confident, correct answer.
+_LOW_EFFORT_MARKERS = (
+    "i don't have enough information",
+    "i do not have enough information",
+    "unable to determine",
+    "cannot determine",
+    "no relevant results",
+    "not enough context",
+    "i don't know",
+    "i cannot answer",
+    "insufficient information",
+)
+
+
+def _is_low_effort_answer(text: str) -> bool:
+    lowered = (text or "").strip().lower()
+    if not lowered:
+        return True
+    return any(marker in lowered for marker in _LOW_EFFORT_MARKERS)
 
 # Pricing per million tokens (Qwen/Llama standard tier rates: $0.35/1M input, $0.80/1M output)
 PROMPT_COST_PER_TOKEN = 0.35 / 1_000_000.0
@@ -62,7 +90,7 @@ Guidelines:
   * Do NOT recommend deprecated symbols without highlighting the migration replacement.
   * When mentioning HTTP endpoints, use the exact endpoint paths from the OpenAPI spec.
   * Provide a clean, syntactically valid code sample showing the v3 invocation.
-"""
+""" + INJECTION_DEFENSE_CLAUSE
 
 
 def _extract_code_sample(text: str) -> str:
@@ -100,8 +128,13 @@ async def run_docs_agent(
 
     messages: List[Dict[str, Any]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": question},
+        {"role": "user", "content": wrap_user_question(question)},
     ]
+
+    loop_guard = LoopGuard()
+    low_effort_retried = False
+    any_ungrounded_input = False
+    any_loop_intercepted = False
 
     flow_log(
         "agent.loop.started",
@@ -271,13 +304,37 @@ async def run_docs_agent(
                     args = {}
 
                 tools_called.append(fn_name)
-                # Execute tool
-                tool_output = await execute_tool(fn_name, args)
+
+                # --- Guard 1: wrong tool / made-up input, BEFORE execution ---
+                validation = validate_tool_call(fn_name, args)
+                # --- Guard 2: exact-repeat loop, BEFORE execution ---
+                loop_msg = loop_guard.register_and_check(fn_name, args)
+
+                intercepted = False
+                if loop_msg is not None:
+                    tool_output = loop_msg
+                    intercepted = True
+                    any_loop_intercepted = True
+                elif not validation.ok:
+                    tool_output = validation.corrective_message
+                    intercepted = True
+                else:
+                    tool_output = await execute_tool(fn_name, args)
+                    if not validation.grounded:
+                        any_ungrounded_input = True
+                        tool_output += (
+                            "\n\n[TOOL VALIDATOR WARNING] This argument did not "
+                            "confidently match anything in the known catalog -- "
+                            "treat the result as unverified and say so if you "
+                            "rely on it in your final answer."
+                        )
 
                 lap_executed_tools.append(
                     {
                         "tool": fn_name,
                         "args": args,
+                        "intercepted": intercepted,
+                        "grounded": validation.grounded,
                         "output": tool_output,
                         "output_preview": tool_output[:140],
                     }
@@ -310,6 +367,19 @@ async def run_docs_agent(
                 tools=[t["tool"] for t in lap_executed_tools],
                 cum_tokens=total_tokens,
             )
+
+            # --- Guard 3: stalled loop across several laps ---
+            loop_guard.note_tool_only_lap()
+            if loop_guard.is_stalled():
+                budget_exceeded = True
+                budget_fired = "LOOP_DETECTED"
+                flow_log(
+                    "agent.budget_terminated",
+                    budget="LOOP_DETECTED",
+                    lap_count=lap_count,
+                )
+                break
+
             # Continue loop to next lap
             continue
         else:
@@ -320,6 +390,47 @@ async def run_docs_agent(
             else:
                 clean_content = re.sub(r"^Thought:\s*.*?(?=\n\n|\n[A-Z]|$)", "", clean_content, flags=re.S).strip()
             final_answer = clean_content if clean_content else content.strip()
+            loop_guard.note_progress_lap()
+
+            # --- Guard 4: quiet give-up, before accepting as final ---
+            if (
+                not low_effort_retried
+                and _is_low_effort_answer(final_answer)
+                and lap_idx <= 2
+            ):
+                low_effort_retried = True
+                messages.append(msg)
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Your answer does not appear to resolve the "
+                            "question. If information is genuinely missing, "
+                            "call the relevant tool before concluding. If it "
+                            "is truly unavailable, state in one sentence "
+                            "exactly what is missing and why, instead of a "
+                            "generic refusal."
+                        ),
+                    }
+                )
+                lap_traces.append(
+                    {
+                        "lap": lap_idx,
+                        "type": "low_effort_retry",
+                        "reasoning": reasoning[:200] if reasoning else "",
+                        "answer_preview": final_answer[:120],
+                        "lap_tokens": lap_tokens,
+                        "cum_tokens": total_tokens,
+                        "lap_time_s": round(lap_elapsed, 3),
+                    }
+                )
+                flow_log(
+                    "agent.lap.low_effort_retry",
+                    lap=lap_idx,
+                    answer_preview=final_answer[:120],
+                )
+                continue
+
             lap_traces.append(
                 {
                     "lap": lap_idx,
@@ -359,6 +470,15 @@ async def run_docs_agent(
         "budget_exceeded": budget_exceeded,
         "budget_fired": budget_fired,
         "lap_traces": lap_traces,
+        # Guardrail signals (Part 2 of the failure-mode + injection task)
+        "low_confidence": bool(
+            any_ungrounded_input or any_loop_intercepted or low_effort_retried
+        ),
+        "guardrails": {
+            "ungrounded_tool_input": any_ungrounded_input,
+            "loop_intercepted": any_loop_intercepted,
+            "low_effort_retry_triggered": low_effort_retried,
+        },
     }
 
     flow_log(

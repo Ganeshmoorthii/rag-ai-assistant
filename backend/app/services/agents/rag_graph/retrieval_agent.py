@@ -27,6 +27,25 @@ from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.retrieval import query_rewriter, retriever
 from app.services.llm import llm_client
+from app.services.security.injection_guard import scan_for_injection_markers
+
+
+def _flag_injection_suspects(documents: List[Dict[str, Any]]) -> None:
+    """Tag any retrieved chunk whose text trips the injection-pattern
+    scanner. This runs BEFORE the chunk ever reaches the response_agent's
+    prompt, so downstream code (uncertainty notes, context building) can
+    treat it with extra caution instead of citing it as plain fact."""
+    for doc in documents:
+        hits = scan_for_injection_markers(doc.get("text", ""))
+        doc["injection_suspected"] = bool(hits)
+        if hits:
+            flow_log(
+                "security.injection_suspected",
+                source="retrieval_agent",
+                chunk_id=doc.get("id"),
+                filename=doc.get("filename"),
+                patterns_matched=hits,
+            )
 
 
 SCORE_SYSTEM = (
@@ -181,6 +200,11 @@ async def _retrieve_for_subquery(
     documents: List[Dict[str, Any]] = []
     scores: Dict[str, Any] = {}
     laps: List[Dict[str, Any]] = []
+    # Loop guard: a rewrite that returns the same text as one already
+    # tried is not progress -- without this, a stuck query_rewriter can
+    # burn every retry re-searching for the exact same string.
+    seen_queries = {sub_query.strip().lower()}
+    stalled = False
 
     while True:
         result = await retriever.retrieve(
@@ -193,6 +217,7 @@ async def _retrieve_for_subquery(
             hyde=False,
         )
         documents = result["chunks"]
+        _flag_injection_suspects(documents)
         scores = await score_evidence(sub_query, documents)
         sufficient = _is_sufficient(scores)
 
@@ -221,10 +246,26 @@ async def _retrieve_for_subquery(
 
         retry_count += 1
         try:
-            search_query = await query_rewriter.rewrite_query(sub_query)
+            candidate_query = await query_rewriter.rewrite_query(sub_query)
         except Exception as e:  # noqa: BLE001
             flow_log("retrieval_agent.rewrite_failed", error=str(e))
             break
+
+        # Stalled-loop guard: the rewriter returned something we already
+        # tried -- searching it again would just repeat the same lap for
+        # no new evidence, so stop instead of burning the rest of the
+        # retry budget on a no-op.
+        normalized = candidate_query.strip().lower()
+        if normalized in seen_queries:
+            stalled = True
+            flow_log(
+                "retrieval_agent.rewrite_stalled",
+                sub_query=sub_query,
+                repeated_query=candidate_query,
+            )
+            break
+        seen_queries.add(normalized)
+        search_query = candidate_query
 
     return {
         "sub_query": sub_query,
@@ -233,6 +274,7 @@ async def _retrieve_for_subquery(
         "scores": scores,
         "sufficient": _is_sufficient(scores),
         "retry_count": retry_count,
+        "stalled": stalled,
         "laps": laps,
     }
 
@@ -320,6 +362,7 @@ async def retrieval_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "sub_query": sr["sub_query"],
                     "final_search_query": sr["search_query"],
                     "retry_count": sr["retry_count"],
+                    "stalled": sr.get("stalled", False),
                     "scores": sr["scores"],
                     "document_count": len(sr["documents"]),
                 }
