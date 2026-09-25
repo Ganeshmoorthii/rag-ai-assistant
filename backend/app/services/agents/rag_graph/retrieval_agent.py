@@ -28,6 +28,7 @@ from app.core.flow_log import flow_log
 from app.services.retrieval import query_rewriter, retriever
 from app.services.llm import llm_client
 from app.services.security.injection_guard import scan_for_injection_markers
+from app.services.security.loop_guard import LoopGuard
 
 
 def _flag_injection_suspects(documents: List[Dict[str, Any]]) -> None:
@@ -200,10 +201,13 @@ async def _retrieve_for_subquery(
     documents: List[Dict[str, Any]] = []
     scores: Dict[str, Any] = {}
     laps: List[Dict[str, Any]] = []
-    # Loop guard: a rewrite that returns the same text as one already
-    # tried is not progress -- without this, a stuck query_rewriter can
-    # burn every retry re-searching for the exact same string.
-    seen_queries = {sub_query.strip().lower()}
+    # Shared loop guard (also used by docs_qa's ReAct loop): a rewrite
+    # that returns text already tried is not progress -- without this, a
+    # stuck query_rewriter can burn every retry re-searching the same
+    # string. Pre-register the starting query so an immediate rewrite
+    # back to it is caught too.
+    loop_guard = LoopGuard()
+    loop_guard.register_and_check("retrieve", {"search_query": sub_query.strip().lower()})
     stalled = False
 
     while True:
@@ -251,12 +255,13 @@ async def _retrieve_for_subquery(
             flow_log("retrieval_agent.rewrite_failed", error=str(e))
             break
 
-        # Stalled-loop guard: the rewriter returned something we already
-        # tried -- searching it again would just repeat the same lap for
-        # no new evidence, so stop instead of burning the rest of the
-        # retry budget on a no-op.
+        # Stalled-loop guard (shared LoopGuard): the rewriter returned
+        # something we already tried -- searching it again would just
+        # repeat the same lap for no new evidence, so stop instead of
+        # burning the rest of the retry budget on a no-op.
         normalized = candidate_query.strip().lower()
-        if normalized in seen_queries:
+        loop_msg = loop_guard.register_and_check("retrieve", {"search_query": normalized})
+        if loop_msg is not None:
             stalled = True
             flow_log(
                 "retrieval_agent.rewrite_stalled",
@@ -264,7 +269,6 @@ async def _retrieve_for_subquery(
                 repeated_query=candidate_query,
             )
             break
-        seen_queries.add(normalized)
         search_query = candidate_query
 
     return {

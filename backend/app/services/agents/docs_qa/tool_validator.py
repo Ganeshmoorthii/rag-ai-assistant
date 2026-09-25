@@ -23,6 +23,7 @@ import os
 from typing import Any, Dict, List
 
 from app.services.agents.docs_qa.doc_tools import DEPRECATIONS_CATALOG, _load_openapi_spec
+from app.services.security.validation import ValidationResult
 
 _ENDPOINT_SHAPE_HINTS = ("/",)
 
@@ -40,14 +41,6 @@ def _known_symbols() -> List[str]:
     for version_cat in DEPRECATIONS_CATALOG.values():
         symbols.extend(version_cat.keys())
     return symbols
-
-
-class ValidationResult:
-    def __init__(self, ok: bool, reason: str = "", corrective_message: str = ""):
-        self.ok = ok
-        self.reason = reason
-        self.corrective_message = corrective_message
-        self.grounded = True  # False => argument is likely hallucinated
 
 
 def validate_tool_call(tool_name: str, args: Dict[str, Any]) -> ValidationResult:

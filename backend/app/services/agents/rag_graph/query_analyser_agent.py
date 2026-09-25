@@ -19,6 +19,7 @@ from typing import Any, Dict, List
 
 from app.core.flow_log import flow_log
 from app.services.llm import llm_client
+from app.services.security.query_plan_validator import validate_sub_queries
 
 VALID_INTENTS = {
     "factual_lookup",
@@ -66,10 +67,18 @@ def _extract_json(raw: str) -> Dict[str, Any]:
     return json.loads(raw_clean)
 
 
-async def decompose_query(question: str) -> List[str]:
-    """Split a query into independent sub-queries, if it has more than one."""
+async def decompose_query(question: str) -> Dict[str, Any]:
+    """Split a query into independent sub-queries, if it has more than one.
+
+    Returns the validated/bounded sub_queries plus a guardrails report --
+    see app.services.security.query_plan_validator.validate_sub_queries
+    for why raw LLM output is never trusted directly here. Each sub-query
+    spawns its own concurrent retrieval loop downstream, so an
+    ungrounded/hallucinated decomposition doesn't just give a wrong
+    answer -- it silently multiplies cost and latency.
+    """
     if not _SPLIT_HINTS.search(question):
-        return [question]
+        return {"sub_queries": [question], "guardrails": None}
 
     try:
         raw = await llm_client.call_llm_text(
@@ -79,11 +88,15 @@ async def decompose_query(question: str) -> List[str]:
             temperature=0.0,
         )
         data = _extract_json(raw)
-        sub_queries = [q.strip() for q in data.get("sub_queries", []) if q and q.strip()]
-        return sub_queries or [question]
+        raw_sub_queries = [str(q) for q in data.get("sub_queries", [])]
+        validated = validate_sub_queries(raw_sub_queries, question)
+        g = validated["guardrails"]
+        if g["dropped_empty_or_length"] or g["dropped_duplicate"] or g["truncated_to_max"]:
+            flow_log("query_analyser.decompose_guardrail", question=question, **g)
+        return validated
     except Exception as e:  # noqa: BLE001 - deliberate graceful degradation
         flow_log("query_analyser.decompose_failed", error=str(e))
-        return [question]
+        return {"sub_queries": [question], "guardrails": None}
 
 
 async def classify_query(question: str) -> str:
