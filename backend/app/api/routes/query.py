@@ -63,16 +63,32 @@ async def query_documents(payload: QueryRequest):
     )
     if use_graph:
         flow_log("graph.execution.started", question=payload.question)
-        graph_result = await graph_rag.run_rag_graph(
-            question=payload.question,
-            top_k=payload.top_k,
-            hybrid=payload.hybrid,
-            rerank=payload.rerank,
-            rewrite=payload.rewrite,
-            mmr=payload.mmr,
-            hyde=payload.hyde,
-            retrieval_only=payload.retrieval_only,
-        )
+        try:
+            graph_result = await graph_rag.run_rag_graph(
+                question=payload.question,
+                top_k=payload.top_k,
+                hybrid=payload.hybrid,
+                rerank=payload.rerank,
+                rewrite=payload.rewrite,
+                mmr=payload.mmr,
+                hyde=payload.hyde,
+                retrieval_only=payload.retrieval_only,
+            )
+        except RuntimeError as e:
+            flow_log("llm.error", error=str(e), route="graph")
+            status_code = 429 if "rate-limited" in str(e).lower() else 400
+            raise HTTPException(status_code=status_code, detail=str(e)) from e
+        except httpx.HTTPStatusError as e:
+            flow_log(
+                "llm.error",
+                status_code=e.response.status_code,
+                response=e.response.text,
+                route="graph",
+            )
+            raise HTTPException(
+                status_code=502,
+                detail=f"LLM provider request failed: {e.response.status_code} {e.response.text}",
+            ) from e
         matches = graph_result["chunks"]
         answer = graph_result["answer"]
         trace = graph_result["trace"]
