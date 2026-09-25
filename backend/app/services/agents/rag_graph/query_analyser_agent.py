@@ -146,7 +146,8 @@ async def analyse_query(question: str) -> Dict[str, Any]:
     """Run the full analysis and return a retrieval plan."""
     t0 = time.perf_counter()
 
-    sub_queries = await decompose_query(question)
+    decomposition = await decompose_query(question)
+    sub_queries = decomposition["sub_queries"]
     intent = await classify_query(question)
     route = detect_route(question)
     complexity = detect_complexity(question, sub_queries)
