@@ -20,14 +20,18 @@ export default function ChatPanel() {
     setLoading(true)
 
     try {
-      const result = await askQuestion(q, { use_agent: useAgent })
+      // Toggle ON  -> use_graph:true  runs the 3-agent LangGraph pipeline
+      //               (query_analyser_agent -> retrieval_agent -> response_agent).
+      // Toggle OFF -> use_graph:false forces the plain single-shot retrieve+generate
+      //               baseline, bypassing agents entirely.
+      const result = await askQuestion(q, { use_graph: useAgent, use_agent: false })
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
           text: result.answer,
           sources: result.sources,
-          agentExecution: result.agent_execution,
+          graphExecution: useAgent ? result.trace : null,
         },
       ])
     } catch (err) {
@@ -45,7 +49,7 @@ export default function ChatPanel() {
           <h2 className="text-2xl font-bold text-white mb-1">Chat Assistant</h2>
           <p className="text-sm text-slate-400">
             {useAgent
-              ? 'Agentic RAG — the assistant reasons step by step and calls tools as needed.'
+              ? 'Agentic RAG — 3 agents run per query: query analyser, retrieval agent, response agent.'
               : 'Ask questions about your indexed documents and get instant answers.'}
           </p>
         </div>
@@ -124,133 +128,179 @@ export default function ChatPanel() {
                     </div>
                   </div>
 
-                  {m.agentExecution && (
+                  {m.graphExecution && (
                     <div className="ml-0 mr-auto max-w-xl lg:max-w-2xl xl:max-w-3xl">
                       <div className="p-3 bg-slate-900/90 rounded-xl border border-indigo-700/40 text-xs space-y-2 shadow-lg">
                         <div className="flex items-center justify-between border-b border-slate-700/50 pb-2">
                           <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                            Agentic RAG Diagnostics
+                            3-Agent Pipeline Diagnostics
                             <span className="ml-1 px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-mono font-semibold">
-                              ReAct + CoT
+                              LangGraph
                             </span>
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
-                              m.agentExecution.budget_fired
+                              m.graphExecution.low_confidence
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                                 : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                             }`}
                           >
-                            {m.agentExecution.budget_fired
-                              ? `Budget Fired: ${m.agentExecution.budget_fired}`
-                              : 'All 4 Budgets OK'}
+                            {m.graphExecution.low_confidence ? 'Low Confidence' : 'Confident'}
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px] bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                        {/* Agent 1: query_analyser_agent */}
+                        <div className="grid grid-cols-3 gap-2 font-mono text-[11px] bg-slate-950/50 p-2 rounded-lg border border-slate-800">
                           <div>
-                            <span className="text-slate-400">Laps:</span>{' '}
-                            <span className="text-indigo-200 font-bold">{m.agentExecution.lap_count}</span>
+                            <span className="text-slate-400">Intent:</span>{' '}
+                            <span className="text-indigo-200 font-bold">{m.graphExecution.agentic?.intent}</span>
                           </div>
                           <div>
-                            <span className="text-slate-400">Time:</span>{' '}
-                            <span className="text-indigo-200 font-bold">{m.agentExecution.wall_clock_seconds}s</span>
+                            <span className="text-slate-400">Route:</span>{' '}
+                            <span className="text-indigo-200 font-bold">{m.graphExecution.agentic?.route}</span>
                           </div>
                           <div>
-                            <span className="text-slate-400">Tokens:</span>{' '}
-                            <span className="text-indigo-200 font-bold">
-                              {m.agentExecution.total_tokens?.toLocaleString() || 0}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">Cost:</span>{' '}
-                            <span className="text-indigo-200 font-bold">
-                              ${m.agentExecution.total_cost?.toFixed(5) || '0.00000'}
-                            </span>
+                            <span className="text-slate-400">Complexity:</span>{' '}
+                            <span className="text-indigo-200 font-bold">{m.graphExecution.agentic?.complexity}</span>
                           </div>
                         </div>
 
-                        {m.agentExecution.tools_called && m.agentExecution.tools_called.length > 0 && (
+                        {m.graphExecution.agentic?.sub_queries?.length > 0 && (
                           <div className="pt-0.5 flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-400 text-[11px]">Tools Dispatched:</span>
-                            {m.agentExecution.tools_called.map((tool, idx) => (
+                            <span className="text-slate-400 text-[11px]">Sub-queries:</span>
+                            {m.graphExecution.agentic.sub_queries.map((sq, idx) => (
                               <span
                                 key={idx}
                                 className="px-2 py-0.5 bg-indigo-950/80 text-indigo-300 rounded-md border border-indigo-600/50 font-mono text-[11px]"
                               >
-                                {tool}()
+                                {sq}
                               </span>
                             ))}
                           </div>
                         )}
 
-                        {m.agentExecution.lap_traces && m.agentExecution.lap_traces.length > 0 && (
+                        {/* Agent 2: retrieval_agent */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                              m.graphExecution.agentic?.evidence_sufficient
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            }`}
+                          >
+                            Evidence {m.graphExecution.agentic?.evidence_sufficient ? 'Sufficient' : 'Insufficient'}
+                          </span>
+
+                          {/* Agent 3: response_agent + grade_generation */}
+                          {m.graphExecution.agentic?.format && (
+                            <span className="px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded text-[10px] font-mono border border-slate-700">
+                              Format: {m.graphExecution.agentic.format}
+                            </span>
+                          )}
+                          {m.graphExecution.agentic?.hallucination_grade && (
+                            <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-[10px] font-mono font-bold uppercase border border-cyan-500/30">
+                              Grade: {m.graphExecution.agentic.hallucination_grade}
+                            </span>
+                          )}
+                          {m.graphExecution.agentic?.self_corrected && (
+                            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[10px] font-mono font-bold uppercase border border-amber-500/40">
+                              Self-Corrected
+                            </span>
+                          )}
+                        </div>
+
+                        {m.graphExecution.agentic?.uncertainty_note && (
+                          <div className="text-[11px] text-slate-300 bg-slate-900/80 p-2 rounded-md border border-slate-800 leading-relaxed">
+                            <span className="text-amber-400/90 font-medium block text-[10px] uppercase tracking-wider mb-0.5">
+                              ⚠️ Uncertainty Note:
+                            </span>
+                            {m.graphExecution.agentic.uncertainty_note}
+                          </div>
+                        )}
+
+                        {m.graphExecution.timings_ms?.total && (
+                          <div className="text-[10px] text-slate-400 font-mono pt-0.5">
+                            Total time: {m.graphExecution.timings_ms.total}ms
+                          </div>
+                        )}
+
+                        {m.graphExecution.stages && m.graphExecution.stages.length > 0 && (
                           <details className="mt-2 pt-2 border-t border-slate-800 group" open>
                             <summary className="cursor-pointer text-[11px] font-semibold text-indigo-300 hover:text-indigo-200 flex items-center justify-between py-1 select-none">
-                              <span className="flex items-center gap-1.5">
-                                <span>🔎 Tool Calls & Observations ({m.agentExecution.tools_called?.length || 0} calls)</span>
-                              </span>
+                              <span>🔎 Agent Execution Trace ({m.graphExecution.stages.length} stages)</span>
                               <span className="text-[10px] text-slate-400 font-normal">Toggle View</span>
                             </summary>
 
                             <div className="mt-2.5 space-y-2.5">
-                              {m.agentExecution.lap_traces.map((trace, tIdx) => (
-                                <div key={tIdx} className="rounded-lg bg-slate-950/80 border border-slate-800 p-2.5 space-y-2">
-                                  {/* Lap Header */}
+                              {m.graphExecution.stages.map((stage, sIdx) => (
+                                <div key={sIdx} className="rounded-lg bg-slate-950/80 border border-slate-800 p-2.5 space-y-2">
                                   <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800/70 pb-1 font-mono">
                                     <span className="font-bold text-indigo-300">
-                                      Lap {trace.lap}: {trace.type === 'tool_call' ? 'Tool Invocation' : 'Synthesis & Answer'}
+                                      {sIdx + 1}. {stage.stage}
                                     </span>
-                                    <span>{trace.lap_time_s}s • {trace.lap_tokens} tokens</span>
+                                    {stage.timings_ms != null && <span>{stage.timings_ms}ms</span>}
                                   </div>
 
-                                  {/* Model Reasoning / Thought */}
-                                  {trace.reasoning && (
-                                    <div className="text-[11px] text-slate-300 bg-slate-900/80 p-2 rounded-md border border-slate-800 leading-relaxed">
-                                      <span className="text-amber-400/90 font-medium block text-[10px] uppercase tracking-wider mb-0.5">
-                                        💭 Model Reasoning:
-                                      </span>
-                                      {trace.reasoning}
+                                  {/* query_analyser stage */}
+                                  {stage.stage === 'query_analyser' && (
+                                    <div className="font-mono text-[10.5px] text-slate-300 space-y-1">
+                                      <div>intent: <span className="text-indigo-200">{stage.intent}</span> · route: <span className="text-indigo-200">{stage.route}</span> · complexity: <span className="text-indigo-200">{stage.complexity}</span></div>
+                                      <div>sub_queries: {stage.sub_queries?.map((sq, i) => (
+                                        <span key={i} className="px-1.5 py-0.5 ml-1 bg-indigo-950/80 text-indigo-300 rounded border border-indigo-600/40">{sq}</span>
+                                      ))}</div>
                                     </div>
                                   )}
 
-                                  {/* Tools executed in this lap */}
-                                  {trace.tools && trace.tools.map((t, toolIdx) => (
-                                    <div key={toolIdx} className="space-y-1.5 pt-0.5">
-                                      {/* Tool Call with Input Arguments */}
-                                      <div className="bg-slate-900/90 p-2 rounded-md border border-indigo-900/40 space-y-1">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded text-[9px] font-mono font-bold uppercase border border-emerald-500/30">
-                                              EXECUTE
-                                            </span>
-                                            <span className="font-mono text-[11px] font-bold text-indigo-300">
-                                              {t.tool}()
+                                  {/* retrieval_agent stage: one block per sub-query, each with its full loop history */}
+                                  {stage.stage === 'retrieval_agent' && (
+                                    <div className="space-y-2">
+                                      <div className="font-mono text-[10.5px] text-slate-400">
+                                        {stage.sub_query_count} sub-quer{stage.sub_query_count === 1 ? 'y' : 'ies'} · {stage.document_count} chunks merged · overall sufficient: <span className={stage.sufficient ? 'text-emerald-300' : 'text-amber-300'}>{String(stage.sufficient)}</span>
+                                      </div>
+                                      {stage.sub_results?.map((sr, srIdx) => (
+                                        <div key={srIdx} className="bg-slate-900/90 p-2 rounded-md border border-slate-800 space-y-1.5">
+                                          <div className="flex items-center justify-between font-mono text-[10.5px]">
+                                            <span className="text-slate-200">"{sr.sub_query}"</span>
+                                            <span className={sr.sufficient ? 'text-emerald-300' : 'text-amber-300'}>
+                                              {sr.retry_count} {sr.retry_count === 1 ? 'retry' : 'retries'}{sr.stalled ? ' · stalled' : ''}
                                             </span>
                                           </div>
+                                          {sr.laps?.map((lap, lapIdx) => (
+                                            <div key={lapIdx} className="ml-2 pl-2 border-l border-slate-700/60 font-mono text-[10px] text-slate-400">
+                                              <div className="text-slate-300">
+                                                Loop {lap.attempt + 1}: search "<span className="text-slate-200">{lap.search_query}</span>" → {lap.document_count} docs →{' '}
+                                                <span className={lap.sufficient ? 'text-emerald-300' : 'text-amber-300'}>
+                                                  {lap.sufficient ? 'sufficient' : 'insufficient'}
+                                                </span>
+                                              </div>
+                                              <div>
+                                                relevance {lap.scores?.relevance?.toFixed(2)} · coverage {lap.scores?.coverage?.toFixed(2)} · authority {lap.scores?.authority?.toFixed(2)}
+                                                {lap.scores?.contradiction ? ' · contradiction!' : ''}
+                                              </div>
+                                              {lap.scores?.reason && <div className="italic text-slate-500">{lap.scores.reason}</div>}
+                                            </div>
+                                          ))}
                                         </div>
-                                        {t.args && Object.keys(t.args).length > 0 && (
-                                          <pre className="font-mono text-[10px] text-slate-300 bg-black/40 p-1.5 rounded overflow-x-auto">
-                                            {JSON.stringify(t.args, null, 2)}
-                                          </pre>
-                                        )}
-                                      </div>
-
-                                      {/* Tool Response / Observation */}
-                                      <div className="bg-slate-900/90 p-2 rounded-md border border-slate-800 space-y-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="px-1.5 py-0.2 bg-cyan-500/20 text-cyan-300 rounded text-[9px] font-mono font-bold uppercase border border-cyan-500/30">
-                                            OBSERVATION
-                                          </span>
-                                          <span className="text-[10px] text-slate-400 font-mono">Output received by agent</span>
-                                        </div>
-                                        <div className="font-mono text-[10.5px] text-slate-200 bg-black/50 p-2 rounded max-h-48 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar border border-slate-800/60">
-                                          {t.output || t.output_preview || 'No output returned.'}
-                                        </div>
-                                      </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                  )}
+
+                                  {/* response_agent stage */}
+                                  {stage.stage === 'response_agent' && (
+                                    <div className="font-mono text-[10.5px] text-slate-300 space-y-1">
+                                      <div>format: <span className="text-indigo-200">{stage.format}</span> · self_corrected: <span className={stage.self_corrected ? 'text-amber-300' : 'text-emerald-300'}>{String(stage.self_corrected)}</span></div>
+                                      {stage.self_correction_reason && <div className="text-amber-300/90">reason: {stage.self_correction_reason}</div>}
+                                      {stage.uncertainty_note && <div className="text-slate-400 italic">note: {stage.uncertainty_note}</div>}
+                                    </div>
+                                  )}
+
+                                  {/* grade_generation stage */}
+                                  {stage.stage === 'grade_generation' && (
+                                    <div className="font-mono text-[10.5px] text-slate-300">
+                                      hallucination_grade: <span className="text-cyan-300">{stage.hallucination_grade}</span>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>

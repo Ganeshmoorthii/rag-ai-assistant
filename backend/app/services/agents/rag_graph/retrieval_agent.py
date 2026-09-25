@@ -365,6 +365,9 @@ async def retrieval_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
                     "stalled": sr.get("stalled", False),
                     "scores": sr["scores"],
                     "document_count": len(sr["documents"]),
+                    # Full per-attempt loop history so the UI can show every
+                    # search -> evaluate -> rewrite pass, not just the last one.
+                    "laps": sr.get("laps", []),
                 }
                 for sr in result["sub_results"]
             ],
