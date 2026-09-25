@@ -99,7 +99,7 @@ async def synthesize_answer(
         answer = await llm_client.call_llm_text(
             system_prompt=system_prompt,
             user_prompt=user_content,
-            max_tokens=700,
+            max_tokens=1600,
             temperature=0.0,
         )
 
@@ -126,7 +126,7 @@ async def synthesize_answer(
             answer = await llm_client.call_llm_text(
                 system_prompt=corrective_prompt,
                 user_prompt=user_content,
-                max_tokens=700,
+                max_tokens=1600,
                 temperature=0.0,
             )
             self_corrected = True
