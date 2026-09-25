@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from app.api.schemas import QueryRequest, QueryResponse
 from app.core.config import settings
 from app.core.flow_log import flow_log
+from app.services.agents.docs_qa.docs_agent import run_docs_agent
 from app.services.llm.llm_client import generate_answer
 from app.services.observability.trace_logger import log_interaction_trace
 from app.services.agents.rag_graph import graph_rag
@@ -29,7 +30,6 @@ async def query_documents(payload: QueryRequest):
     )
 
     if payload.use_agent:
-        from app.services.agents.docs_qa.docs_agent import run_docs_agent
         flow_log("agent.route.started", question=payload.question)
         agent_out = await run_docs_agent(payload.question)
         answer = agent_out.get("answer", "")

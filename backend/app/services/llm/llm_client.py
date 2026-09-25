@@ -1,3 +1,6 @@
+import asyncio
+import re
+
 import httpx
 
 from app.core.config import settings
@@ -97,11 +100,9 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
             if resp.status_code == 429:
                 raw_reset = resp.headers.get("x-ratelimit-reset-tokens", "")
                 reset_s = 6.0
-                import re
                 m = re.search(r"([\d\.]+)", raw_reset)
                 if m:
                     reset_s = float(m.group(1)) + 0.5
-                import asyncio
                 await asyncio.sleep(min(reset_s, 60.0))
                 continue
             resp.raise_for_status()
@@ -120,7 +121,6 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
         )
 
     raw_content = choices[0]["message"]["content"]
-    import re
     answer = re.sub(r"<think>.*?</think>", "", raw_content, flags=re.DOTALL).strip()
     flow_log(
         "llm.answer.extracted",
@@ -163,11 +163,9 @@ async def call_llm_text(
             if resp.status_code == 429:
                 raw_reset = resp.headers.get("x-ratelimit-reset-tokens", "")
                 reset_s = 5.0
-                import re
                 m = re.search(r"([\d\.]+)", raw_reset)
                 if m:
                     reset_s = float(m.group(1)) + 0.5
-                import asyncio
                 await asyncio.sleep(min(reset_s, 60.0))
                 continue
             resp.raise_for_status()
@@ -186,5 +184,4 @@ async def call_llm_text(
         )
 
     raw_text = choices[0]["message"]["content"]
-    import re
     return re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
