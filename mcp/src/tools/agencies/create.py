@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.schemas.agency.schema import AgencyCreate, AgencyUpdate
+from src.schemas.agency import AgencyCreate, AgencyUpdate
 from src.services import agency as svc
 
 router = APIRouter()

@@ -1,5 +1,5 @@
 from src.repositories import inventory as repo
-from src.schemas.inventory.schema import InventoryItemCreate, RestockRequest
+from src.schemas.inventory import InventoryItemCreate, RestockRequest
 from src.utils.errors import NotFoundError, ValidationError
 
 

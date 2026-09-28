@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.schemas.inventory.schema import RestockRequest
+from src.schemas.inventory import RestockRequest
 from src.services import inventory as svc
 
 router = APIRouter()

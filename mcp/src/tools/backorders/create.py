@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.schemas.backorder.schema import BackorderCreate, BackorderUpdate
+from src.schemas.backorder import BackorderCreate, BackorderUpdate
 from src.services import backorder as svc
 
 router = APIRouter()

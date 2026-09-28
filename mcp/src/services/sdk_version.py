@@ -1,5 +1,5 @@
 from src.repositories import sdk_version as repo
-from src.schemas.sdk_version.schema import SDKVersionCreate
+from src.schemas.sdk_version import SDKVersionCreate
 from src.utils.errors import NotFoundError
 
 

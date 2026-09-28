@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.schemas.sdk_version.schema import SDKVersionCreate
+from src.schemas.sdk_version import SDKVersionCreate
 from src.services import sdk_version as svc
 
 router = APIRouter()

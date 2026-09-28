@@ -1,5 +1,5 @@
 from src.repositories import agency as repo
-from src.schemas.agency.schema import AgencyCreate, AgencyUpdate
+from src.schemas.agency import AgencyCreate, AgencyUpdate
 from src.utils.errors import NotFoundError, ConflictError
 
 

@@ -1,5 +1,5 @@
 from src.repositories import backorder as repo
-from src.schemas.backorder.schema import BackorderCreate, BackorderUpdate
+from src.schemas.backorder import BackorderCreate, BackorderUpdate
 from src.utils.errors import NotFoundError, ValidationError
 
 VALID_STATUSES = {"open", "partial", "fulfilled", "cancelled"}

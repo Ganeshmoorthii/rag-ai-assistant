@@ -1,5 +1,5 @@
 from src.repositories import commission as repo
-from src.schemas.commission.schema import CommissionCreate
+from src.schemas.commission import CommissionCreate
 from src.utils.errors import NotFoundError, ValidationError
 
 COMMISSION_MULTIPLIER = 1.4   # from Advita docs: commission = item_cost × 1.4

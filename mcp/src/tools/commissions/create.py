@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.schemas.commission.schema import CommissionCreate
+from src.schemas.commission import CommissionCreate
 from src.services import commission as svc
 
 router = APIRouter()
