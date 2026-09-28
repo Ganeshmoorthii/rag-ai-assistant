@@ -20,11 +20,8 @@ export default function ChatPanel() {
     setLoading(true)
 
     try {
-      // Toggle ON  -> use_graph:true  runs the 3-agent LangGraph pipeline
-      //               (query_analyser_agent -> retrieval_agent -> response_agent).
-      // Toggle OFF -> use_graph:false forces the plain single-shot retrieve+generate
-      //               baseline, bypassing agents entirely.
-      const result = await askQuestion(q, { use_graph: useAgent, use_agent: false })
+      // Toggle ON runs the LangGraph pipeline; the default agent can call MCP tools by intent.
+      const result = await askQuestion(q, useAgent ? { use_graph: true } : { use_agent: true })
       setMessages((prev) => [
         ...prev,
         {
@@ -50,7 +47,7 @@ export default function ChatPanel() {
           <p className="text-sm text-slate-400">
             {useAgent
               ? 'Agentic RAG — 3 agents run per query: query analyser, retrieval agent, response agent.'
-              : 'Ask questions about your indexed documents and get instant answers.'}
+              : 'Ask about documents or live PostgreSQL-backed agency, inventory, backorder, commission, and SDK-version data.'}
           </p>
         </div>
 
@@ -75,7 +72,7 @@ export default function ChatPanel() {
             />
           </button>
           <span className={`text-xs font-medium transition-colors ${useAgent ? 'text-indigo-300 font-semibold' : 'text-slate-400'}`}>
-            Agentic RAG
+            {useAgent ? 'Agentic RAG' : 'Tool-enabled agent'}
           </span>
         </div>
       </div>

@@ -58,16 +58,6 @@ CREATE TABLE IF NOT EXISTS commissions (
     created_at          TIMESTAMP DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS auth_tokens (
-    id          SERIAL PRIMARY KEY,
-    token_name  TEXT,
-    scope       TEXT,
-    issued_to   TEXT,
-    expires_at  TIMESTAMP,
-    revoked     BOOLEAN DEFAULT false,
-    created_at  TIMESTAMP DEFAULT now()
-);
-
 CREATE TABLE IF NOT EXISTS sdk_versions (
     id                  SERIAL PRIMARY KEY,
     function_name       TEXT NOT NULL,

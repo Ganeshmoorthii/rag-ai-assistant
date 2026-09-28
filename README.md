@@ -18,6 +18,18 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 Get an OpenRouter API key at https://openrouter.ai/keys. Set `OPENROUTER_MODEL` in `.env` to any model id available on OpenRouter (e.g. `anthropic/claude-3.5-sonnet`, `openai/gpt-4o-mini`, `meta-llama/llama-3.1-8b-instruct`).
+## PostgreSQL MCP tools
+
+The chat's default tool-enabled agent can query or update the MCP database when the request calls for it. Configure `POSTGRES_URL` in `mcp/.env` from `mcp/.env.example`, then start the MCP service in one terminal:
+
+```powershell
+cd mcp
+..\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn src.server:app --host 127.0.0.1 --port 8001 --reload
+```
+
+The activation command assumes the shared virtual environment is at the workspace root; if yours is `backend/.venv`, activate `..\backend\.venv\Scripts\Activate.ps1` instead. Keep the MCP terminal open. Start the backend in another terminal as usual. It discovers MCP functions from `http://localhost:8001/openapi.json`; override this with `MCP_SERVER_URL` in `backend/.env` if the MCP service uses a different URL. MCP has no API-key authentication, so keep it bound to localhost or another trusted network.
 
 ## Frontend setup
 

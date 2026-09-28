@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     # --- PostgreSQL -----------------------------------------------------------
     postgres_url: str = ""          # e.g. postgresql://user:pass@localhost:5432/ai_assistant
     postgres_enabled: bool = False  # set True once DB is provisioned
+    mcp_server_url: str = "http://localhost:8001"
 
     # --- LangGraph Agentic RAG settings -----------------------------------
     use_langgraph: bool = True

@@ -1,11 +1,15 @@
 import uuid
 
 import chromadb
+from chromadb.config import Settings as ChromaSettings
 from chromadb.utils import embedding_functions
 
 from app.core.config import settings
 
-_client = chromadb.PersistentClient(path=settings.chroma_dir)
+_client = chromadb.PersistentClient(
+    path=settings.chroma_dir,
+    settings=ChromaSettings(anonymized_telemetry=False),
+)
 
 _embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name=settings.embedding_model

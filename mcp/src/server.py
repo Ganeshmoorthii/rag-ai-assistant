@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config.env import settings
 from src.database.pg_client import init_pool, close_pool
 from src.database.migrations import run_migrations
-from src.middleware.auth import APIKeyMiddleware
 from src.utils.logger import get_logger
 
 from src.tools.agencies import search as ag_search, get as ag_get, create as ag_create
@@ -32,7 +31,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AI-Assistant MCP Server", version="1.0.0", lifespan=lifespan)
 
-app.add_middleware(APIKeyMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:8000"],

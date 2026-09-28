@@ -21,6 +21,7 @@ from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.agents.docs_qa.doc_tools import TOOLS_SCHEMA, execute_tool
 from app.services.agents.docs_qa.loop_guard import LoopGuard
+from app.services.agents.docs_qa.mcp_tools import execute_mcp_tool, load_mcp_tools
 from app.services.agents.docs_qa.tool_validator import validate_tool_call
 from app.services.security.answer_guard import is_low_effort_answer
 from app.services.security.injection_guard import (
@@ -41,10 +42,12 @@ DEFAULT_MAX_WALL_CLOCK_SECONDS = 120.0
 SYSTEM_PROMPT = """You are an expert Developer Documentation & SDK Migration Agent.
 Your job is to answer API and SDK migration questions (e.g., migrating from v2 to v3).
 
-You have access to 3 specialized tools:
+You have access to documentation tools and PostgreSQL-backed MCP tools:
 1. `search_docs(query)`: Search developer guides, manuals, and PDFs for concepts, tutorials, and explanations.
 2. `get_openapi_spec(endpoint_path)`: Fetch the OpenAPI 3.0 specification for an HTTP endpoint schema.
 3. `check_deprecation(symbol_or_endpoint, api_version)`: Verify if a method/symbol/endpoint is deprecated in target version (v1, v2, v3) and get replacement details.
+
+Use MCP tools when the user's request requires live agency, inventory, backorder, commission, or SDK-version data. Use returned records as the source of truth, and only create, update, restock, settle, or delete records when the user explicitly asks for that change. Do not guess required database values.
 
 ### ReAct (Reason + Act) & Chain-of-Thought (CoT) Prompting Methodology:
 At every lap of your problem solving, strictly follow the ReAct reasoning paradigm:
@@ -110,6 +113,8 @@ async def run_docs_agent(
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": wrap_user_question(question)},
     ]
+    mcp_tools, mcp_operations = await load_mcp_tools()
+    available_tools = TOOLS_SCHEMA + mcp_tools
 
     loop_guard = LoopGuard()
     low_effort_retried = False
@@ -182,7 +187,7 @@ async def run_docs_agent(
             "max_tokens": 750 if is_final_lap else 500,
         }
         if not is_final_lap:
-            payload["tools"] = TOOLS_SCHEMA
+            payload["tools"] = available_tools
             payload["tool_choice"] = "auto"
 
         headers = {
@@ -309,7 +314,10 @@ async def run_docs_agent(
                     intercepted = True
                     any_tool_invalid = True
                 else:
-                    tool_output = await execute_tool(fn_name, args)
+                    if fn_name in mcp_operations:
+                        tool_output = await execute_mcp_tool(fn_name, args, mcp_operations)
+                    else:
+                        tool_output = await execute_tool(fn_name, args)
                     if not validation.grounded:
                         any_ungrounded_input = True
                         tool_output += (
