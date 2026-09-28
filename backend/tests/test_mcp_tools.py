@@ -1,8 +1,10 @@
 import os
 import asyncio
+import json
 import sys
 import unittest
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
 import httpx
 
@@ -14,6 +16,8 @@ if MCP_DIR not in sys.path:
     sys.path.insert(0, MCP_DIR)
 
 from app.services.agents.docs_qa.mcp_tools import build_mcp_tools, execute_mcp_tool
+from app.services.agents.rag_graph import response_agent
+from app.services.llm import llm_client
 from src.server import app as mcp_app
 
 
@@ -100,6 +104,108 @@ class TestMcpToolSchemas(unittest.TestCase):
         self.assertEqual(observed["path"], "/mcp/agencies/AC-1")
         self.assertEqual(observed["query"], {"active_only": "false"})
         self.assertIn("AC-1", result)
+
+
+class TestLlmToolCalling(unittest.IsolatedAsyncioTestCase):
+    async def test_dispatches_function_and_synthesizes_observation(self):
+        requests = []
+        executed = []
+
+        def handle_request(request):
+            payload = json.loads(request.content)
+            requests.append(payload)
+            if len(requests) == 1:
+                return httpx.Response(
+                    200,
+                    json={
+                        "choices": [
+                            {
+                                "message": {
+                                    "role": "assistant",
+                                    "content": None,
+                                    "tool_calls": [
+                                        {
+                                            "id": "call-1",
+                                            "type": "function",
+                                            "function": {
+                                                "name": "mcp_list_agencies",
+                                                "arguments": "{}",
+                                            },
+                                        }
+                                    ],
+                                }
+                            }
+                        ]
+                    },
+                )
+            return httpx.Response(
+                200,
+                json={"choices": [{"message": {"role": "assistant", "content": "Agency AC-1 is active."}}]},
+            )
+
+        async def execute_tool(name, arguments):
+            executed.append((name, arguments))
+            return '{"agency_code":"AC-1","active":true}'
+
+        client_type = httpx.AsyncClient
+
+        def create_client(**kwargs):
+            return client_type(transport=httpx.MockTransport(handle_request), **kwargs)
+
+        test_settings = SimpleNamespace(
+            llm_api_key="test-key",
+            llm_model="test-model",
+            llm_url="https://llm.test/chat/completions",
+            llm_provider="test provider",
+        )
+        with (
+            patch("app.services.llm.llm_client.settings", test_settings),
+            patch("app.services.llm.llm_client.httpx.AsyncClient", side_effect=create_client),
+        ):
+            answer = await llm_client.call_llm_text(
+                system_prompt="Use MCP for current agency data.",
+                user_prompt="Which agencies are active?",
+                tools=[{"type": "function", "function": {"name": "mcp_list_agencies"}}],
+                tool_executor=execute_tool,
+            )
+
+        self.assertEqual(answer, "Agency AC-1 is active.")
+        self.assertEqual(executed, [("mcp_list_agencies", {})])
+        self.assertEqual(len(requests), 2)
+        self.assertEqual(requests[0]["tool_choice"], "auto")
+        self.assertTrue(any(message["role"] == "tool" for message in requests[1]["messages"]))
+
+    async def test_graph_response_uses_mcp_without_retrieved_documents(self):
+        tool_name = "mcp_list_agencies"
+        schemas = [{"type": "function", "function": {"name": tool_name}}]
+        operations = {tool_name: {"method": "GET", "path": "/mcp/agencies", "parameters": [], "has_body": False}}
+        trace = {"stages": [], "timings_ms": {}}
+
+        async def complete_with_tool(**kwargs):
+            self.assertEqual(kwargs["tools"], schemas)
+            observation = await kwargs["tool_executor"](tool_name, {})
+            self.assertIn("AC-1", observation)
+            return "Agency AC-1 is active."
+
+        state = {
+            "question": "Which agencies are active?",
+            "documents": [],
+            "intent": "factual_lookup",
+            "evidence_sufficient": False,
+            "sub_results": [],
+            "trace": trace,
+            "config": {},
+        }
+        with (
+            patch.object(response_agent, "load_mcp_tools", new=AsyncMock(return_value=(schemas, operations))),
+            patch.object(response_agent, "execute_mcp_tool", new=AsyncMock(return_value='{"agency_code":"AC-1"}')),
+            patch.object(response_agent.llm_client, "call_llm_text", side_effect=complete_with_tool),
+        ):
+            result = await response_agent.response_agent_node(state)
+
+        self.assertEqual(result["answer"], "Agency AC-1 is active.")
+        response_stage = trace["stages"][0]
+        self.assertEqual(response_stage["mcp_tools_called"], [tool_name])
 
 
 if __name__ == "__main__":

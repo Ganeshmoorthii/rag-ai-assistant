@@ -1,5 +1,7 @@
 import asyncio
+import json
 import re
+from collections.abc import Awaitable, Callable
 
 import httpx
 
@@ -136,52 +138,93 @@ async def call_llm_text(
     user_prompt: str,
     max_tokens: int = 400,
     temperature: float = 0.0,
+    tools: list[dict] | None = None,
+    tool_executor: Callable[[str, dict], Awaitable[str]] | None = None,
+    max_tool_calls: int = 6,
 ) -> str:
-    """Generic text completion helper used by LangGraph grading nodes."""
+    """Run a text completion, optionally dispatching bounded function calls."""
     if not settings.llm_api_key:
         key_name = "OPENROUTER_API_KEY" if settings.openrouter_enabled else "GROQ_API_KEY"
         raise RuntimeError(f"{key_name} is not set. Add it to backend/.env")
 
-    payload = {
-        "model": settings.llm_model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-    }
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
     headers = {
         "Authorization": f"Bearer {settings.llm_api_key}",
         "Content-Type": "application/json",
     }
 
-    data = None
-    for attempt in range(4):
-        async with httpx.AsyncClient(timeout=45) as client:
-            resp = await client.post(settings.llm_url, json=payload, headers=headers)
-            if resp.status_code == 429:
-                raw_reset = resp.headers.get("x-ratelimit-reset-tokens", "")
-                reset_s = 5.0
-                m = re.search(r"([\d\.]+)", raw_reset)
-                if m:
-                    reset_s = float(m.group(1)) + 0.5
-                await asyncio.sleep(min(reset_s, 60.0))
-                continue
-            resp.raise_for_status()
-            data = resp.json()
-            break
+    tool_calls_made = 0
+    for _ in range(max_tool_calls + 2):
+        payload = {
+            "model": settings.llm_model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if tools and tool_executor and tool_calls_made < max_tool_calls:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
 
-    if data is None:
-        raise RuntimeError("LLM text call repeatedly rate-limited. Please retry shortly.")
+        data = None
+        for attempt in range(4):
+            async with httpx.AsyncClient(timeout=45) as client:
+                resp = await client.post(settings.llm_url, json=payload, headers=headers)
+                if resp.status_code == 429:
+                    raw_reset = resp.headers.get("x-ratelimit-reset-tokens", "")
+                    reset_s = 5.0
+                    match = re.search(r"([\d\.]+)", raw_reset)
+                    if match:
+                        reset_s = float(match.group(1)) + 0.5
+                    await asyncio.sleep(min(reset_s, 60.0))
+                    continue
+                resp.raise_for_status()
+                data = resp.json()
+                break
 
-    choices = data.get("choices")
-    if not choices:
-        error = data.get("error", {})
-        message = error.get("message") if isinstance(error, dict) else None
-        raise RuntimeError(
-            f"{settings.llm_provider} returned no choices: {message or data}"
-        )
+        if data is None:
+            raise RuntimeError("LLM text call repeatedly rate-limited. Please retry shortly.")
 
-    raw_text = choices[0]["message"]["content"]
-    return re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+        choices = data.get("choices")
+        if not choices:
+            error = data.get("error", {})
+            message = error.get("message") if isinstance(error, dict) else None
+            raise RuntimeError(
+                f"{settings.llm_provider} returned no choices: {message or data}"
+            )
+
+        message = choices[0]["message"]
+        requested_tools = message.get("tool_calls") or []
+        if not requested_tools:
+            raw_text = message.get("content") or ""
+            return re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+
+        messages.append(message)
+        for tool_call in requested_tools:
+            function = tool_call.get("function", {})
+            tool_name = function.get("name", "")
+            try:
+                arguments = json.loads(function.get("arguments", "{}"))
+                if not isinstance(arguments, dict):
+                    raise ValueError("tool arguments must be a JSON object")
+                if tool_calls_made >= max_tool_calls:
+                    observation = "Tool-call limit reached; answer using the observations already collected."
+                else:
+                    observation = await tool_executor(tool_name, arguments)
+                    tool_calls_made += 1
+            except (json.JSONDecodeError, ValueError) as error:
+                observation = f"Invalid arguments for {tool_name}: {error}"
+            except Exception as error:  # noqa: BLE001 - return tool failures to the model for recovery
+                observation = f"Tool {tool_name} failed: {error}"
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.get("id", ""),
+                    "name": tool_name,
+                    "content": observation,
+                }
+            )
+
+    raise RuntimeError("LLM tool-call loop did not produce a final answer within its limit.")
