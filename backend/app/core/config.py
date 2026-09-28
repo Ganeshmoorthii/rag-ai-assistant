@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     mmr_enabled: bool = False
     mmr_lambda: float = 0.7  # 1.0 = pure relevance, 0.0 = pure diversity
 
+    # --- PostgreSQL -----------------------------------------------------------
+    postgres_url: str = ""          # e.g. postgresql://user:pass@localhost:5432/ai_assistant
+    postgres_enabled: bool = False  # set True once DB is provisioned
+
     # --- LangGraph Agentic RAG settings -----------------------------------
     use_langgraph: bool = True
     graph_max_retries: int = 1
