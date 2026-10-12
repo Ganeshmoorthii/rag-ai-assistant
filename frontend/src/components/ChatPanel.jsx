@@ -46,7 +46,7 @@ export default function ChatPanel() {
           <h2 className="text-2xl font-bold text-white mb-1">Chat Assistant</h2>
           <p className="text-sm text-slate-400">
             {useAgent
-              ? 'Agentic RAG — 3 agents run per query: query analyser, retrieval agent, response agent.'
+              ? 'A manager routes each question to document research and, when needed, read-only live-data lookup.'
               : 'Ask about documents or live PostgreSQL-backed agency, inventory, backorder, commission, and SDK-version data.'}
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function ChatPanel() {
                         <div className="flex items-center justify-between border-b border-slate-700/50 pb-2">
                           <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                            3-Agent Pipeline Diagnostics
+                            Manager + Specialists
                             <span className="ml-1 px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-mono font-semibold">
                               LangGraph
                             </span>

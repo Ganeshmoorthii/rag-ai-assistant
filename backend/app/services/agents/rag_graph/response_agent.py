@@ -82,6 +82,9 @@ async def synthesize_answer(
     sufficient: bool,
     sub_results: List[Dict[str, Any]],
     retrieval_only: bool = False,
+    operational_observations: Optional[List[str]] = None,
+    operational_data_status: Optional[str] = None,
+    allow_mcp_tools: bool = True,
 ) -> Dict[str, Any]:
     """Evidence synthesis + format selection + uncertainty handling."""
     t0 = time.perf_counter()
@@ -93,18 +96,47 @@ async def synthesize_answer(
     self_correction_reason: Optional[str] = None
     tools_called: List[str] = []
 
+    operational_observations = operational_observations or []
+
     if retrieval_only:
         answer = "(retrieval_only=true — generation skipped)"
     else:
-        mcp_tools, mcp_operations = await load_mcp_tools()
-        if not documents and not mcp_tools:
-            answer = "No relevant documents were found in the knowledge base to answer your question."
+        mcp_tools, mcp_operations = (
+            await load_mcp_tools() if allow_mcp_tools else ([], {})
+        )
+        if not documents and not mcp_tools and not operational_observations:
+            if operational_data_status == "unavailable":
+                answer = (
+                    "No relevant documents were found, and live operational data "
+                    "could not be reached to answer your question."
+                )
+            else:
+                answer = "No relevant documents were found in the knowledge base to answer your question."
         else:
             system_prompt = build_system_prompt(format_instruction, uncertainty_note)
             context = llm_client.build_context_block(documents)
             if not context:
                 context = "No relevant document passages were retrieved."
             user_content = f"Context:\n{context}\n\n{wrap_user_question(question)}"
+            if operational_observations:
+                user_content += "\n\nLive operational observations:\n" + "\n\n".join(
+                    operational_observations
+                )
+            if operational_data_status == "unavailable":
+                user_content += (
+                    "\n\nLive operational lookup was unavailable. Do not state "
+                    "current database facts as known."
+                )
+            elif operational_data_status == "partial":
+                user_content += (
+                    "\n\nSome live operational lookups failed. Clearly qualify "
+                    "the available results and do not imply complete coverage."
+                )
+            elif operational_data_status == "no_data":
+                user_content += (
+                    "\n\nThe live-data specialist returned no observations. "
+                    "Do not infer current database facts."
+                )
             tools_called: List[str] = []
             tool_observations: List[str] = []
 
@@ -212,6 +244,9 @@ async def response_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
         sufficient=sufficient,
         sub_results=sub_results,
         retrieval_only=bool(cfg.get("retrieval_only")),
+        operational_observations=state.get("operational_observations", []),
+        operational_data_status=state.get("operational_data_status"),
+        allow_mcp_tools=False,
     )
 
     trace["timings_ms"]["response_agent"] = result["elapsed_ms"]
@@ -223,7 +258,8 @@ async def response_agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "document_count": len(documents),
             "self_corrected": result["self_corrected"],
             "self_correction_reason": result["self_correction_reason"],
-                        "mcp_tools_called": result["mcp_tools_called"],
+            "mcp_tools_called": result["mcp_tools_called"],
+            "operational_data_status": state.get("operational_data_status"),
             "timings_ms": result["elapsed_ms"],
         }
     )

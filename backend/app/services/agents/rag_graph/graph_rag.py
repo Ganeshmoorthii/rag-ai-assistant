@@ -33,7 +33,13 @@ from typing import Any, Dict, List, Optional, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from app.core.config import settings
-from app.services.agents.rag_graph import query_analyser_agent, response_agent, retrieval_agent
+from app.services.agents.rag_graph import (
+    live_data_agent,
+    manager_agent,
+    query_analyser_agent,
+    response_agent,
+    retrieval_agent,
+)
 
 
 class RAGGraphState(TypedDict):
@@ -50,6 +56,9 @@ class RAGGraphState(TypedDict):
     uncertainty_note: Optional[str]
     hallucination_grade: Optional[str]
     self_corrected: bool
+    use_live_data: bool
+    operational_observations: List[str]
+    operational_data_status: Optional[str]
     max_retries: int
     trace: Dict[str, Any]
     config: Dict[str, Any]
@@ -60,14 +69,22 @@ class RAGGraphState(TypedDict):
 def create_rag_graph():
     workflow = StateGraph(RAGGraphState)
 
+    workflow.add_node("manager", manager_agent.manager_node)
     workflow.add_node("query_analyser", query_analyser_agent.query_analyser_node)
     workflow.add_node("retrieval_agent", retrieval_agent.retrieval_agent_node)
+    workflow.add_node("live_data_agent", live_data_agent.live_data_agent_node)
     workflow.add_node("response_agent", response_agent.response_agent_node)
     workflow.add_node("grade_generation", response_agent.grade_generation_node)
 
-    workflow.add_edge(START, "query_analyser")
+    workflow.add_edge(START, "manager")
+    workflow.add_edge("manager", "query_analyser")
     workflow.add_edge("query_analyser", "retrieval_agent")
-    workflow.add_edge("retrieval_agent", "response_agent")
+    workflow.add_conditional_edges(
+        "retrieval_agent",
+        lambda state: "live_data_agent" if state.get("use_live_data") else "response_agent",
+        {"live_data_agent": "live_data_agent", "response_agent": "response_agent"},
+    )
+    workflow.add_edge("live_data_agent", "response_agent")
     workflow.add_edge("response_agent", "grade_generation")
     workflow.add_edge("grade_generation", END)
 
@@ -130,10 +147,13 @@ async def run_rag_graph(
         "uncertainty_note": None,
         "hallucination_grade": None,
         "self_corrected": False,
+        "use_live_data": False,
+        "operational_observations": [],
+        "operational_data_status": None,
         "max_retries": settings.graph_max_retries,
         "trace": {
             "original_question": question,
-            "engine": "langgraph-3-agent",
+            "engine": "langgraph-manager-specialists",
             "config": resolved_config,
             "stages": [],
             "timings_ms": {},
@@ -158,6 +178,8 @@ async def run_rag_graph(
         "uncertainty_note": final_state.get("uncertainty_note"),
         "hallucination_grade": final_state.get("hallucination_grade"),
         "self_corrected": final_state.get("self_corrected", False),
+        "use_live_data": final_state.get("use_live_data", False),
+        "operational_data_status": final_state.get("operational_data_status"),
     }
 
     # Guardrail summary: mirrors the docs_agent mode's low_confidence flag
@@ -174,6 +196,10 @@ async def run_rag_graph(
         or grade == "citation_mismatch"
         or not final_state.get("evidence_sufficient", True)
         or stalled_any
+        or (
+            final_state.get("use_live_data")
+            and final_state.get("operational_data_status") != "completed"
+        )
     )
 
     return {

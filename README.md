@@ -45,7 +45,7 @@ Open http://localhost:5173.
 ## How it works
 
 1. Upload a PDF — the backend extracts text per page, splits it into overlapping word chunks, embeds each chunk locally with `sentence-transformers/all-MiniLM-L6-v2`, and stores them in a persistent ChromaDB collection.
-2. Ask a question — the backend embeds the question, retrieves the top-K most similar chunks from ChromaDB, and sends them as context to the LLM via OpenRouter.
+2. Ask a question — the LangGraph manager routes it through document retrieval and conditionally invokes a GET-only specialist for current PostgreSQL-backed records. The response agent synthesizes the retrieved passages and any live-data observations.
 3. The answer is returned along with the source chunks (filename, page, similarity score) used to generate it.
 
 ## Retrieval debugging (Week 4)

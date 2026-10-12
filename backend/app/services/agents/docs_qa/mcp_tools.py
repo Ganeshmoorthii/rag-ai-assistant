@@ -45,7 +45,9 @@ def _resolve_schema(schema: dict[str, Any], components: dict[str, Any], seen: se
     return result
 
 
-def build_mcp_tools(openapi: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+def build_mcp_tools(
+    openapi: dict[str, Any], read_only: bool = False
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
     """Build LLM function schemas and request metadata from MCP OpenAPI."""
     tools = []
     operations = {}
@@ -56,6 +58,8 @@ def build_mcp_tools(openapi: dict[str, Any]) -> tuple[list[dict[str, Any]], dict
             continue
         for method, operation in path_item.items():
             if method.lower() not in _HTTP_METHODS:
+                continue
+            if read_only and method.lower() != "get":
                 continue
             tags = set(operation.get("tags", []))
             if not tags or tags & _EXCLUDED_TAGS:
@@ -108,7 +112,9 @@ def build_mcp_tools(openapi: dict[str, Any]) -> tuple[list[dict[str, Any]], dict
     return tools, operations
 
 
-async def load_mcp_tools() -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+async def load_mcp_tools(
+    read_only: bool = False,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
     """Load the available MCP tools; return empty collections if MCP is offline."""
     if not settings.mcp_server_url:
         return [], {}
@@ -116,7 +122,7 @@ async def load_mcp_tools() -> tuple[list[dict[str, Any]], dict[str, dict[str, An
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(f"{settings.mcp_server_url.rstrip('/')}/openapi.json")
             response.raise_for_status()
-        return build_mcp_tools(response.json())
+        return build_mcp_tools(response.json(), read_only=read_only)
     except (httpx.HTTPError, ValueError) as error:
         flow_log("agent.mcp_tools.unavailable", server_url=settings.mcp_server_url, error=str(error))
         return [], {}

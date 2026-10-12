@@ -29,7 +29,15 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 from app.services.retrieval import bm25, metrics, retriever
 from app.services.ingestion import chunker, pdf_loader
-from app.services.agents.rag_graph import graph_rag, query_analyser_agent, response_agent, retrieval_agent
+from app.services.agents.rag_graph import (
+    graph_rag,
+    live_data_agent,
+    manager_agent,
+    query_analyser_agent,
+    response_agent,
+    retrieval_agent,
+)
+from app.services.agents.docs_qa.mcp_tools import build_mcp_tools
 from app.services.agents.docs_qa.loop_guard import LoopGuard
 from app.services.agents.docs_qa.tool_validator import validate_tool_call
 from app.services.security.injection_guard import scan_for_injection_markers, wrap_untrusted, wrap_user_question
@@ -332,6 +340,72 @@ class TestGuardrailsAndLoopHandling(unittest.TestCase):
         self.assertTrue(is_low_effort_answer("Cannot determine."))
         self.assertFalse(is_low_effort_answer("The BILL-RESTOCK flow works as follows:\n1. Step A\n2. Step B."))
 
+    def test_read_only_mcp_tools_exclude_write_operations(self):
+        openapi = {
+            "paths": {
+                "/mcp/inventory": {
+                    "get": {"tags": ["inventory"], "operationId": "search_inventory"},
+                    "post": {"tags": ["inventory"], "operationId": "create_inventory"},
+                }
+            }
+        }
+
+        tools, operations = build_mcp_tools(openapi, read_only=True)
+
+        self.assertEqual([tool["function"]["name"] for tool in tools], ["mcp_search_inventory"])
+        self.assertEqual(operations["mcp_search_inventory"]["method"], "GET")
+
+
+class TestManagerSpecialists(unittest.IsolatedAsyncioTestCase):
+    async def test_manager_plan_validates_route_and_falls_back(self):
+        plan = manager_agent._parse_plan(
+            '{"use_live_data": true, "reason": "Current inventory requested."}'
+        )
+        self.assertTrue(plan["use_live_data"])
+        self.assertTrue(manager_agent._fallback_plan("Show current inventory") ["use_live_data"])
+        self.assertFalse(manager_agent._fallback_plan("Explain inventory concepts") ["use_live_data"])
+        with self.assertRaises(ValueError):
+            manager_agent._parse_plan('{"use_live_data": "yes"}')
+
+    async def test_manager_skips_live_data_for_retrieval_only(self):
+        state = {
+            "question": "Show current inventory",
+            "trace": {"stages": [], "timings_ms": {}},
+            "config": {"retrieval_only": True},
+        }
+        with patch.object(manager_agent, "plan_query", new_callable=AsyncMock) as plan_query:
+            result = await manager_agent.manager_node(state)
+
+        plan_query.assert_not_awaited()
+        self.assertFalse(result["use_live_data"])
+
+    async def test_live_data_specialist_uses_read_only_tools(self):
+        state = {
+            "question": "Show current inventory",
+            "trace": {"stages": [], "timings_ms": {}},
+        }
+
+        async def call_tool(**kwargs):
+            await kwargs["tool_executor"]("mcp_search_inventory", {"query": "current"})
+            return "Inventory lookup completed."
+
+        with (
+            patch.object(live_data_agent, "load_mcp_tools", new_callable=AsyncMock) as load_tools,
+            patch.object(live_data_agent, "execute_mcp_tool", new_callable=AsyncMock) as execute_tool,
+            patch.object(live_data_agent.llm_client, "call_llm_text", new_callable=AsyncMock) as call_llm,
+        ):
+            load_tools.return_value = ([{"type": "function"}], {"mcp_search_inventory": {}})
+            execute_tool.return_value = "<tool_observation>3 items</tool_observation>"
+            call_llm.side_effect = call_tool
+            result = await live_data_agent.live_data_agent_node(state)
+
+        load_tools.assert_awaited_once_with(read_only=True)
+        self.assertEqual(result["operational_data_status"], "completed")
+        self.assertEqual(result["operational_observations"], ["<tool_observation>3 items</tool_observation>"])
+
+    async def test_graph_compiles_with_manager_specialist_branch(self):
+        self.assertIsNotNone(graph_rag.create_rag_graph())
+
 
 class TestFastAPIEndpoints(unittest.IsolatedAsyncioTestCase):
     """Test full application HTTP API via ASGI Transport."""
@@ -402,7 +476,7 @@ class TestFastAPIEndpoints(unittest.IsolatedAsyncioTestCase):
         self.assertIn("retrieval_only=true", data["answer"])
         self.assertIn("sources", data)
         self.assertIn("trace", data)
-        self.assertEqual(data["trace"].get("engine"), "langgraph-3-agent")
+        self.assertEqual(data["trace"].get("engine"), "langgraph-manager-specialists")
         self.assertIn("agentic", data["trace"])
         self.assertEqual(data["trace"]["agentic"]["route"], "exact_identifier")
 
