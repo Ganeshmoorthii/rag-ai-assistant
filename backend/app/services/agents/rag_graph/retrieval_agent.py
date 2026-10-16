@@ -23,6 +23,7 @@ import re
 import time
 from typing import Any, Dict, List
 
+from app.core import tracing
 from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.retrieval import query_rewriter, retriever
@@ -313,12 +314,18 @@ async def run_retrieval_agent(
     """
     t0 = time.perf_counter()
 
-    sub_results = await asyncio.gather(
-        *[
-            _retrieve_for_subquery(sq, route, base_config, max_retries)
-            for sq in sub_queries
-        ]
-    )
+    async def traced_subquery(sq: str) -> Dict[str, Any]:
+        with tracing.span("retrieve.sub_query", kind="retrieval", sub_query=sq) as s:
+            result = await _retrieve_for_subquery(sq, route, base_config, max_retries)
+            s.set(
+                retry_count=result["retry_count"],
+                sufficient=result["sufficient"],
+                stalled=result["stalled"],
+                document_count=len(result["documents"]),
+            )
+            return result
+
+    sub_results = await asyncio.gather(*[traced_subquery(sq) for sq in sub_queries])
     sub_results = list(sub_results)
 
     documents = _merge_documents(sub_results)

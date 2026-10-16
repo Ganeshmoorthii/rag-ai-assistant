@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 
 import httpx
 
+from app.core import tracing
 from app.core.config import settings
 from app.core.flow_log import flow_log
 from app.services.security.injection_guard import (
@@ -133,6 +134,15 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
     return answer
 
 
+def _usage_attrs(data: dict | None) -> dict:
+    usage = (data or {}).get("usage") or {}
+    return {
+        key: usage[key]
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+        if key in usage
+    }
+
+
 async def call_llm_text(
     system_prompt: str,
     user_prompt: str,
@@ -169,20 +179,31 @@ async def call_llm_text(
             payload["tool_choice"] = "auto"
 
         data = None
-        for attempt in range(4):
-            async with httpx.AsyncClient(timeout=45) as client:
-                resp = await client.post(settings.llm_url, json=payload, headers=headers)
-                if resp.status_code == 429:
-                    raw_reset = resp.headers.get("x-ratelimit-reset-tokens", "")
-                    reset_s = 5.0
-                    match = re.search(r"([\d\.]+)", raw_reset)
-                    if match:
-                        reset_s = float(match.group(1)) + 0.5
-                    await asyncio.sleep(min(reset_s, 60.0))
-                    continue
-                resp.raise_for_status()
-                data = resp.json()
-                break
+        with tracing.span(
+            "llm.call",
+            kind="llm",
+            model=settings.llm_model,
+            max_tokens=max_tokens,
+            tools_offered=bool(payload.get("tools")),
+            system_prompt=system_prompt[:120],
+        ) as llm_span:
+            rate_limited = 0
+            for attempt in range(4):
+                async with httpx.AsyncClient(timeout=45) as client:
+                    resp = await client.post(settings.llm_url, json=payload, headers=headers)
+                    if resp.status_code == 429:
+                        rate_limited += 1
+                        raw_reset = resp.headers.get("x-ratelimit-reset-tokens", "")
+                        reset_s = 5.0
+                        match = re.search(r"([\d\.]+)", raw_reset)
+                        if match:
+                            reset_s = float(match.group(1)) + 0.5
+                        await asyncio.sleep(min(reset_s, 60.0))
+                        continue
+                    resp.raise_for_status()
+                    data = resp.json()
+                    break
+            llm_span.set(rate_limited_retries=rate_limited, **_usage_attrs(data))
 
         if data is None:
             raise RuntimeError("LLM text call repeatedly rate-limited. Please retry shortly.")
@@ -212,7 +233,14 @@ async def call_llm_text(
                 if tool_calls_made >= max_tool_calls:
                     observation = "Tool-call limit reached; answer using the observations already collected."
                 else:
-                    observation = await tool_executor(tool_name, arguments)
+                    with tracing.span(
+                        f"tool.{tool_name}", kind="tool", arguments=json.dumps(arguments, default=str)
+                    ) as tool_span:
+                        observation = await tool_executor(tool_name, arguments)
+                        tool_span.set(
+                            result=observation,
+                            failed=observation.startswith(("MCP tool failed", "MCP tool request failed")),
+                        )
                     tool_calls_made += 1
             except (json.JSONDecodeError, ValueError) as error:
                 observation = f"Invalid arguments for {tool_name}: {error}"

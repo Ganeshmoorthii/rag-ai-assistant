@@ -54,7 +54,7 @@ def log_interaction_trace(
 
     try:
         now = datetime.now(timezone.utc)
-        tid = trace_id or f"tr_{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        tid = trace_id or (trace_info or {}).get("trace_id") or f"tr_{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
 
         # Format chunks to preserve schema
         retrieved_chunks = []
@@ -103,6 +103,7 @@ def log_interaction_trace(
             "answer": answer,
             "stages": t_info.get("stages", []),
             "timings_ms": t_info.get("timings_ms", {}),
+            "spans": t_info.get("spans", []),
         }
         if error:
             record["error"] = error

@@ -32,7 +32,11 @@ from typing import Any, Dict, List, Optional, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from app.core import tracing
 from app.core.config import settings
+from app.core.flow_log import flow_log
+from app.core.tracing import traced_node
+from app.services.observability.trace_logger import log_interaction_trace
 from app.services.agents.rag_graph import (
     live_data_agent,
     manager_agent,
@@ -66,22 +70,41 @@ class RAGGraphState(TypedDict):
 
 # --- Build StateGraph ------------------------------------------------------
 
+def _route_after_retrieval(state: RAGGraphState) -> str:
+    target = "live_data_agent" if state.get("use_live_data") else "response_agent"
+    flow_log("graph.handoff", from_node="retrieval_agent", to_node=target)
+    return target
+
+
 def create_rag_graph():
     workflow = StateGraph(RAGGraphState)
 
-    workflow.add_node("manager", manager_agent.manager_node)
-    workflow.add_node("query_analyser", query_analyser_agent.query_analyser_node)
-    workflow.add_node("retrieval_agent", retrieval_agent.retrieval_agent_node)
-    workflow.add_node("live_data_agent", live_data_agent.live_data_agent_node)
-    workflow.add_node("response_agent", response_agent.response_agent_node)
-    workflow.add_node("grade_generation", response_agent.grade_generation_node)
+    # traced_node wraps each node in a span; the name must match the node's
+    # trace["stages"] entry so the stage summary is copied onto the span.
+    workflow.add_node("manager", traced_node("manager")(manager_agent.manager_node))
+    workflow.add_node(
+        "query_analyser", traced_node("query_analyser")(query_analyser_agent.query_analyser_node)
+    )
+    workflow.add_node(
+        "retrieval_agent", traced_node("retrieval_agent")(retrieval_agent.retrieval_agent_node)
+    )
+    workflow.add_node(
+        "live_data_agent", traced_node("live_data_agent")(live_data_agent.live_data_agent_node)
+    )
+    workflow.add_node(
+        "response_agent", traced_node("response_agent")(response_agent.response_agent_node)
+    )
+    workflow.add_node(
+        "grade_generation",
+        traced_node("grade_generation", kind="check")(response_agent.grade_generation_node),
+    )
 
     workflow.add_edge(START, "manager")
     workflow.add_edge("manager", "query_analyser")
     workflow.add_edge("query_analyser", "retrieval_agent")
     workflow.add_conditional_edges(
         "retrieval_agent",
-        lambda state: "live_data_agent" if state.get("use_live_data") else "response_agent",
+        _route_after_retrieval,
         {"live_data_agent": "live_data_agent", "response_agent": "response_agent"},
     )
     workflow.add_edge("live_data_agent", "response_agent")
@@ -161,9 +184,28 @@ async def run_rag_graph(
         "config": resolved_config,
     }
 
-    final_state = await graph.ainvoke(initial_state)
+    run, token = tracing.start_run()
+    initial_state["trace"]["trace_id"] = run.trace_id
+    flow_log("graph.run.started", question=question)
+    try:
+        with tracing.span("rag_graph", kind="run", question=question):
+            final_state = await graph.ainvoke(initial_state)
+    except Exception as error:
+        flow_log("graph.run.failed", error=str(error), span_tree="\n" + tracing.render_tree(run.spans))
+        log_interaction_trace(
+            question=question,
+            chunks=[],
+            answer="",
+            trace_info={**initial_state["trace"], "spans": run.spans},
+            trace_id=run.trace_id,
+            error=f"{type(error).__name__}: {error}",
+        )
+        raise
+    finally:
+        tracing.end_run(token)
 
     trace = final_state["trace"]
+    trace["spans"] = run.spans
     trace["timings_ms"]["total"] = round(
         sum(v for k, v in trace["timings_ms"].items() if k != "total"), 1
     )
@@ -200,6 +242,14 @@ async def run_rag_graph(
             final_state.get("use_live_data")
             and final_state.get("operational_data_status") != "completed"
         )
+    )
+
+    flow_log(
+        "graph.run.completed",
+        trace_id=run.trace_id,
+        total_ms=trace["timings_ms"]["total"],
+        low_confidence=trace["low_confidence"],
+        span_tree="\n" + tracing.render_tree(run.spans),
     )
 
     return {
