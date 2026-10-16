@@ -191,7 +191,8 @@ async def run_rag_graph(
         with tracing.span("rag_graph", kind="run", question=question):
             final_state = await graph.ainvoke(initial_state)
     except Exception as error:
-        flow_log("graph.run.failed", error=str(error), span_tree="\n" + tracing.render_tree(run.spans))
+        flow_log("graph.run.failed", error=str(error))
+        print(tracing.render_tree(run.spans), flush=True)
         log_interaction_trace(
             question=question,
             chunks=[],
@@ -249,8 +250,8 @@ async def run_rag_graph(
         trace_id=run.trace_id,
         total_ms=trace["timings_ms"]["total"],
         low_confidence=trace["low_confidence"],
-        span_tree="\n" + tracing.render_tree(run.spans),
     )
+    print(tracing.render_tree(run.spans), flush=True)
 
     return {
         "answer": final_state["answer"],
