@@ -134,6 +134,10 @@ async def generate_answer(question: str, matches: list[dict]) -> str:
     return answer
 
 
+def _is_reasoning_model() -> bool:
+    return not settings.openrouter_enabled and "gpt-oss" in settings.llm_model
+
+
 def _usage_attrs(data: dict | None) -> dict:
     usage = (data or {}).get("usage") or {}
     return {
@@ -174,6 +178,10 @@ async def call_llm_text(
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if _is_reasoning_model():
+            # gpt-oss spends max_tokens on hidden reasoning first; at the
+            # small limits the JSON-only agents use, that leaves empty content.
+            payload["reasoning_effort"] = "low"
         if tools and tool_executor and tool_calls_made < max_tool_calls:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
